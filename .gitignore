@@ -1,0 +1,10 @@
+# Agent pipeline debug logs — local only
+_debug/
+
+# Vercel
+.vercel/
+.vercel
+
+# OS junk
+.DS_Store
+Thumbs.db

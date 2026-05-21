@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verifier Report · Halcyon iPod Classic Webapp v1</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a4a;
+  --ink-dim: #888;
+  --rule: #e6e2dc;
+  --paper: #faf7f2;
+  --accent: #ff8a6b;
+  --pass: #4a8b56;
+  --warn: #d4ad36;
+  --fail: #c95151;
+  --serif: "Fraunces", Georgia, serif;
+  --sans: "Inter", -apple-system, system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans); color: var(--ink); background: var(--paper);
+  line-height: 1.55; font-size: 15px; -webkit-font-smoothing: antialiased;
+}
+.page { max-width: 920px; margin: 0 auto; padding: 56px 32px 96px; }
+.eyebrow {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--accent); font-weight: 600; margin-bottom: 16px;
+}
+h1 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(32px, 4.5vw, 44px); line-height: 1.1;
+  letter-spacing: -0.02em; margin-bottom: 16px;
+}
+h1 em { color: var(--accent); font-style: italic; }
+.lede {
+  font-family: var(--serif); font-size: 18px; line-height: 1.5;
+  color: var(--ink-soft); max-width: 680px; margin-bottom: 32px;
+}
+h2 {
+  font-family: var(--serif); font-weight: 500; font-size: 24px;
+  letter-spacing: -0.01em; margin: 48px 0 16px;
+}
+h3 {
+  font-family: var(--sans); font-size: 13px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-dim); font-weight: 600;
+  margin: 24px 0 8px;
+}
+p { color: var(--ink-soft); margin-bottom: 12px; }
+ul, ol { padding-left: 22px; color: var(--ink-soft); margin-bottom: 12px; }
+li { margin-bottom: 4px; line-height: 1.5; }
+strong { color: var(--ink); font-weight: 600; }
+em { color: var(--ink); font-style: italic; }
+code, .mono {
+  font-family: var(--mono); font-size: 12.5px;
+  background: #fff; border: 1px solid var(--rule);
+  padding: 1px 6px; color: var(--ink);
+}
+.meta {
+  display: grid; grid-template-columns: auto 1fr; gap: 8px 24px;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  padding: 16px 0; margin-bottom: 32px; font-size: 14px;
+}
+.meta dt {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-dim); font-weight: 500; padding-top: 2px;
+}
+.meta dd { color: var(--ink-soft); }
+.crumb {
+  display: inline-flex; gap: 6px; align-items: center;
+  font-size: 12px; color: var(--ink-dim); margin-bottom: 24px;
+}
+.crumb a { color: var(--ink-dim); text-decoration: none; border-bottom: 1px solid transparent; }
+.crumb a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.crumb .sep { color: var(--rule); }
+
+/* Score gauge */
+.score-card {
+  display: flex; align-items: baseline; gap: 16px;
+  padding: 20px 24px; background: #fff; border: 1px solid var(--rule);
+  margin-bottom: 24px;
+}
+.score-num {
+  font-family: var(--serif); font-size: 56px; line-height: 1;
+  font-weight: 400; letter-spacing: -0.02em;
+}
+.score-num.pass { color: var(--pass); }
+.score-num.warn { color: var(--warn); }
+.score-num.fail { color: var(--fail); }
+.score-of { color: var(--ink-dim); font-size: 16px; }
+.score-action {
+  margin-left: auto; font-size: 12px; letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 4px 10px; border: 1px solid var(--rule-hi);
+}
+.score-action.accept { color: var(--pass); border-color: var(--pass); }
+.score-action.continue, .score-action.revise { color: var(--warn); border-color: var(--warn); }
+.score-action.stop { color: var(--fail); border-color: var(--fail); }
+
+/* Dimension bars */
+.dim-row {
+  display: grid; grid-template-columns: 1fr 60px 80px;
+  gap: 16px; align-items: center;
+  padding: 10px 0; border-bottom: 1px dashed var(--rule);
+}
+.dim-row:last-child { border-bottom: none; }
+.dim-name { color: var(--ink); }
+.dim-bar {
+  height: 6px; background: var(--rule); position: relative; grid-column: 1 / 4;
+}
+.dim-bar::after {
+  content: ""; position: absolute; left: 0; top: 0; height: 100%;
+  width: var(--w, 0%); background: var(--pass);
+}
+.dim-bar.warn::after { background: var(--warn); }
+.dim-bar.fail::after { background: var(--fail); }
+.dim-score { font-family: var(--mono); text-align: right; }
+
+/* Issues */
+.issue-group { margin-bottom: 24px; }
+.issue-group h3 .count { color: var(--ink-dim); font-weight: 400; margin-left: 6px; }
+.issue {
+  padding: 14px 0; border-bottom: 1px dashed var(--rule);
+}
+.issue:last-child { border-bottom: none; }
+.issue-title { font-weight: 600; color: var(--ink); margin-bottom: 4px; display: flex; gap: 8px; align-items: baseline; }
+.issue-id {
+  font-family: var(--mono); font-size: 11px; color: var(--ink-dim);
+  background: #fff; padding: 1px 5px; border: 1px solid var(--rule);
+}
+.issue-desc { color: var(--ink-soft); font-size: 14px; line-height: 1.5; margin-bottom: 6px; }
+.issue-loc { font-family: var(--mono); font-size: 11.5px; color: var(--ink-dim); margin-bottom: 6px; }
+.issue-fix { color: var(--ink-soft); font-size: 13.5px; line-height: 1.5; }
+.issue-fix-label {
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--pass); font-weight: 600; margin-right: 6px;
+}
+.sev-critical { border-left: 3px solid var(--fail); padding-left: 12px; }
+.sev-major    { border-left: 3px solid var(--warn); padding-left: 12px; }
+.sev-minor    { border-left: 3px solid var(--rule); padding-left: 12px; }
+
+/* Lists & tables */
+.kv {
+  display: grid; grid-template-columns: 200px 1fr;
+  gap: 8px 24px; padding: 10px 0; border-bottom: 1px dashed var(--rule);
+  align-items: baseline;
+}
+.kv:last-child { border-bottom: none; }
+.kv .k {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-dim); font-weight: 500;
+}
+.kv .v { color: var(--ink); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font-size: 12px; padding: 3px 10px; border: 1px solid var(--rule);
+  background: #fff; color: var(--ink-soft);
+}
+.chip.accent { color: var(--accent); border-color: var(--accent); background: rgba(255,138,107,0.05); }
+
+/* Index */
+.index-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px; margin-top: 16px;
+}
+.index-card {
+  display: block; padding: 16px; border: 1px solid var(--rule);
+  background: #fff; text-decoration: none; color: var(--ink);
+}
+.index-card:hover { border-color: var(--accent); }
+.index-card-label {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 6px;
+}
+.index-card-title { font-family: var(--serif); font-size: 18px; }
+.index-card-meta { font-size: 12px; color: var(--ink-soft); margin-top: 8px; }
+
+footer {
+  margin-top: 64px; padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  font-size: 11px; color: var(--ink-dim);
+  letter-spacing: 0.04em;
+}
+</style>
+</head>
+<body>
+<main class="page">
+<div class="crumb"><a href="../review.html">review</a> <span class="sep">/</span> <a href="../review.html">Halcyon-Take3</a> <span class="sep">/</span> v1 <span class="sep">/</span> Verifier report</div>
+<p class="eyebrow">Verifier Agent · Audit Report</p>
+<h1>Verifier report <em>v1</em></h1>
+<div class="score-card">
+<div class="score-num pass">81</div>
+<div class="score-of">/ 100 · pass at 80</div>
+<div class="score-action accept">accept</div>
+</div>
+<h2>Score breakdown</h2>
+<div class="score-card" style="flex-direction:column;align-items:stretch;gap:0;padding:8px 24px;">
+<div class="dim-row">
+          <div class="dim-name">requirement coverage</div>
+          <div class="dim-bar " style="--w:84%;"></div>
+          <div class="dim-score">21 / 25</div>
+        </div>
+<div class="dim-row">
+          <div class="dim-name">visual design quality</div>
+          <div class="dim-bar " style="--w:80%;"></div>
+          <div class="dim-score">20 / 25</div>
+        </div>
+<div class="dim-row">
+          <div class="dim-name">ux and navigation</div>
+          <div class="dim-bar warn" style="--w:76%;"></div>
+          <div class="dim-score">19 / 25</div>
+        </div>
+<div class="dim-row">
+          <div class="dim-name">code quality and responsiveness</div>
+          <div class="dim-bar " style="--w:84%;"></div>
+          <div class="dim-score">21 / 25</div>
+        </div>
+</div>
+<h2>Recommendation</h2>
+<p>Total score 81/100 is above the 80 pass threshold AND wire-trace audit found no broken wires. However, two critical issues (CRIT-001 submenu list cap, CRIT-002 power-off re-boot) remain — Generator may wish to fix these in a follow-up patch before final assembly even though the rubric passes.</p>
+<h3>Priority fixes for next iteration</h3>
+<ul>
+<li>Fix CRIT-002: move long-press power-off into WheelEngine and skip sector dispatch when it fires, so POWER_OFF cleanly exits without immediate POWER_ON.</li>
+<li>Fix CRIT-001: implement a scrolling window in renderSubmenu so the selected row is always visible when the list exceeds 8 items.</li>
+<li>Fix MAJ-001: replace the wheel ::after brushed-aluminum gradient with a flat or subtly-shaded recess so the donut hole doesn&#x27;t read as a punched-through case opening.</li>
+</ul>
+<h2>Issues</h2>
+<div class="issue-group sev-critical">
+<h3>critical <span class="count">(2)</span></h3>
+<div class="issue sev-critical">
+<div class="issue-title">
+<span class="issue-id">CRIT-001</span>
+<span>Submenu rendering hard-caps at 8 items; selection past index 7 invisible</span>
+<span style="color:var(--ink-dim);font-size:11px;font-weight:400;margin-left:auto;">functional_regression</span>
+</div>
+<div class="issue-desc">ScreenRenderer.renderSubmenu uses items.slice(0,8) before rendering rows. When the menu has &gt;8 items (e.g. an artist with many tracks, an All Songs list), wheel-scrolling past index 7 updates appState.selectedIndex but the row never appears in the pane — the user sees no feedback for scrolls 8..N. Scroll indicator is shown but list does not scroll.</div>
+<div class="issue-loc">index.html · ScreenRenderer.renderSubmenu · renderSubmenu function body</div>
+<div class="issue-fix"><span class="issue-fix-label">fix</span>Compute a window: const start = Math.max(0, Math.min(items.length-8, appState.selectedIndex-7)); const visible = items.slice(start, start+8); then render with (start+i) === selectedIndex selection check, and toggle scroll indicators top/bottom based on start.</div>
+</div>
+<div class="issue sev-critical">
+<div class="issue-title">
+<span class="issue-id">CRIT-002</span>
+<span>Power-off immediately re-boots because WheelEngine pointerup still fires PLAY_PAUSE</span>
+<span style="color:var(--ink-dim);font-size:11px;font-weight:400;margin-left:auto;">functional_regression</span>
+</div>
+<div class="issue-desc">An auxiliary pointerdown listener on #wheel-outer starts _playLongTimer for bottom-sector and dispatches POWER_OFF at 1500ms. But WheelEngine&#x27;s own pointerup handler runs on release, detects bottom sector with low drag distance, and dispatches PLAY_PAUSE. In handlePlayPause, when state===OFF it dispatches POWER_ON. Net effect: holding bottom for 1.5s powers off AND immediately powers back on.</div>
+<div class="issue-loc">index.html · #wheel-outer event bindings + WheelEngine._bindWheel pointerup · Event Bindings section (_playLongTimer) and WheelEngine._bindWheel</div>
+<div class="issue-fix"><span class="issue-fix-label">fix</span>Move the long-press logic INTO WheelEngine: on pointerdown record startTime and target sector; on pointerup, if sector===&#x27;PLAY_PAUSE&#x27; and (Date.now()-startTime)&gt;=1500 dispatch POWER_OFF and SKIP the regular sector dispatch (early return). Remove the separate _playLongTimer pointerdown listener.</div>
+</div>
+</div>
+<div class="issue-group sev-major">
+<h3>major <span class="count">(5)</span></h3>
+<div class="issue sev-major">
+<div class="issue-title">
+<span class="issue-id">MAJ-001</span>
+<span>Click-wheel inner cutout shows brushed-aluminum gradient, not a recessed plastic hole</span>
+<span style="color:var(--ink-dim);font-size:11px;font-weight:400;margin-left:auto;">visual_design</span>
+</div>
+<div class="issue-desc">#wheel-outer::after fills the inner 56% with the SAME body gradient (radial 40%/30% + grain + lighting). On a real iPod the area under the center button is the white plastic ring continuing INWARD, not the silver body. The result reads as a hole punched through to the case rather than a circular recess.</div>
+<div class="issue-loc">index.html · #wheel-outer::after</div>
+<div class="issue-fix"><span class="issue-fix-label">fix</span>Replace the ::after background with a flat #C8CACE or a very subtle radial gradient (#D8D8D8 → #C8C8C8) — no grain stripes — and add inset shadow inset 0 2px 4px rgba(0,0,0,0.2) to suggest a recessed well.</div>
+</div>
+<div class="issue sev-major">
+<div class="issue-title">
+<span class="issue-id">MAJ-002</span>
+<span>Cover Flow card images leak object URLs on every re-render</span>
+<span style="color:var(--ink-dim);font-size:11px;font-weight:400;margin-left:auto;">code_quality</span>
+</div>
+<div class="issue-desc">renderCoverFlow creates URL.createObjectURL(album.coverBlob) for each card every time it runs; img.onload revokes that specific URL but if the user scrolls quickly through cards, prior renders&#x27; image-loads may not fire before the next render replaces the parent, leaking blob URLs. Same pattern in updateArtForCurrentMenu for sub-pane.</div>
+<div class="issue-loc">index.html · renderCoverFlow / updateArtForCurrentMenu</div>
+<div class="issue-fix"><span class="issue-fix-label">fix</span>Cache blob→URL mapping on a Map keyed by track.id, generate URL once on library load, reuse on every render. Only revoke on track delete.</div>
+</div>
+<div class="issue sev-major">
+<div class="issue-title">
+<span class="issue-id">MAJ-003</span>
+<span>Quick-scroll overlay shows letter of CURRENTLY selected item, not the upcoming alphabetical jump</span>
+<span style="color:var(--ink-dim);font-size:11px;font-weight:400;margin-left:auto;">ux_navigation</span>
+</div>
+<div class="issue-desc">_showQuickScroll renders list[appState.selectedIndex][0]. The spec describes the iPod behavior as &#x27;releasing wheel jumps selection to next item starting with that letter&#x27;, i.e. the letter shown should be the current alphabetical bucket and on release selection should snap to that letter. Current implementation just shows the letter of whatever row is currently highlighted (which is moving every tick anyway).</div>
+<div class="issue-loc">index.html · WheelEngine._showQuickScroll</div>
+<div class="issue-fix"><span class="issue-fix-label">fix</span>Group sorted list into A-Z buckets, track an _activeBucket that increments by one letter every N ticks of high-velocity scrolling, render the bucket letter, and on pointerup snap selectedIndex to the first item in that bucket.</div>
+</div>
+<div class="issue sev-major">
+<div class="issue-title">
+<span class="issue-id">MAJ-004</span>
+<span>Marquee for long Now Playing title uses fixed 8s loop irrespective of title length</span>
+<span style="color:var(--ink-dim);font-size:11px;font-weight:400;margin-left:auto;">ux_navigation</span>
+</div>
+<div class="issue-desc">@keyframes marquee animates -50% translateX over 8s for ALL title lengths; very long titles scroll fast and very short titles (just over 15 chars) scroll painfully slow. The 30%-70% hold-then-scroll keyframe pattern also pauses awkwardly.</div>
+<div class="issue-loc">index.html · .status-marquee-inner / @keyframes marquee</div>
+<div class="issue-fix"><span class="issue-fix-label">fix</span>Compute the title pixel width on render, set animation-duration via inline style proportional to width (px / 30 = seconds for ~30 px/s), and simplify keyframes to a plain 0% translateX(0) → 100% translateX(-50%) loop with a CSS animation-delay for the initial hold.</div>
+</div>
+<div class="issue sev-major">
+<div class="issue-title">
+<span class="issue-id">MAJ-005</span>
+<span>Bottom-edge dock slot and headphone jack are inside #ipod-device but no constraint prevents overflow on small scales</span>
+<span style="color:var(--ink-dim);font-size:11px;font-weight:400;margin-left:auto;">code_quality</span>
+</div>
+<div class="issue-desc">On small viewports recalcScale shrinks the wrapper but #ipod-wrapper.width=257 / height=430 stays the layout box. flexbox centers, but margin: 40+20 px reserved is per-side, not symmetric. On viewport widths &lt; 277 px (257+20) the wrapper visually clips by 1-2 px on phones, especially with notch insets — no viewport-fit=cover safe-area handling.</div>
+<div class="issue-loc">index.html · &lt;meta name=viewport&gt; + recalcScale</div>
+<div class="issue-fix"><span class="issue-fix-label">fix</span>Add viewport-fit=cover to the meta tag, wrap the body in padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); and in recalcScale use document.documentElement.clientWidth/Height which respects safe areas.</div>
+</div>
+</div>
+<div class="issue-group sev-minor">
+<h3>minor <span class="count">(5)</span></h3>
+<div class="issue sev-minor">
+<div class="issue-title">
+<span class="issue-id">MIN-001</span>
+<span>CSS uses literal color hex values throughout instead of CSS custom properties</span>
+<span style="color:var(--ink-dim);font-size:11px;font-weight:400;margin-left:auto;">code_quality</span>
+</div>
+<div class="issue-desc">Color tokens defined in design_spec (--ipod-primary, --body-silver-lit, etc.) are inlined as literals everywhere. Changes require multi-site edits.</div>
+<div class="issue-loc">index.html · all CSS sections</div>
+<div class="issue-fix"><span class="issue-fix-label">fix</span>Declare :root { --c-primary:#3A78D8; --c-silver:#D6D8DA; ...} at top and use var(--c-primary) throughout.</div>
+</div>
+<div class="issue sev-minor">
+<div class="issue-title">
+<span class="issue-id">MIN-002</span>
+<span>Wheel reflection band is a 2px-tall straight rectangle, not a curved glossy highlight</span>
+<span style="color:var(--ink-dim);font-size:11px;font-weight:400;margin-left:auto;">visual_design</span>
+</div>
+<div class="issue-desc">#wheel-reflection is rect 5%-95% wide, 2px tall at top:30%. Real plastic gloss is a curved bright spot top-left.</div>
+<div class="issue-loc">index.html · #wheel-reflection</div>
+<div class="issue-fix"><span class="issue-fix-label">fix</span>Replace with an SVG ellipse mask or a CSS radial-gradient(ellipse at 30% 25%, rgba(255,255,255,0.6) 0%, transparent 35%) layered into #wheel-outer.</div>
+</div>
+<div class="issue sev-minor">
+<div class="issue-title">
+<span class="issue-id">MIN-003</span>
+<span>Settings &#x27;Reset Settings&#x27; has no confirmation step</span>
+<span style="color:var(--ink-dim);font-size:11px;font-weight:400;margin-left:auto;">ux_navigation</span>
+</div>
+<div class="issue-desc">Center on Reset Settings immediately wipes all settings to defaults with no confirmation overlay. iPod showed an Are You Sure? screen.</div>
+<div class="issue-loc">index.html · handleCycleSetting __reset__ branch</div>
+<div class="issue-fix"><span class="issue-fix-label">fix</span>On reset selection, push a confirmation submenu with &#x27;Cancel&#x27; and &#x27;Reset All Settings&#x27; rows; only commit on second SELECT.</div>
+</div>
+<div class="issue sev-minor">
+<div class="issue-title">
+<span class="issue-id">MIN-004</span>
+<span>Status play indicator is a 8px font-awesome-style glyph; lacks anti-alias smoothing at small size</span>
+<span style="color:var(--ink-dim);font-size:11px;font-weight:400;margin-left:auto;">visual_design</span>
+</div>
+<div class="issue-desc">▶ at font-size: 8px renders blocky on non-Retina screens. Real iPod status bar uses a vector icon scaled crisply.</div>
+<div class="issue-loc">index.html · .status-play</div>
+<div class="issue-fix"><span class="issue-fix-label">fix</span>Replace text glyph with an inline 6x8 SVG triangle: &lt;svg viewBox=&#x27;0 0 6 8&#x27;&gt;&lt;polygon points=&#x27;0,0 6,4 0,8&#x27; fill=&#x27;#1a6FFF&#x27;/&gt;&lt;/svg&gt; for sharp rendering at all DPRs.</div>
+</div>
+<div class="issue sev-minor">
+<div class="issue-title">
+<span class="issue-id">MIN-005</span>
+<span>Center-button long-press fires context menu in any state, even MAIN_MENU where Browse Artist makes no sense</span>
+<span style="color:var(--ink-dim);font-size:11px;font-weight:400;margin-left:auto;">ux_navigation</span>
+</div>
+<div class="issue-desc">_centerPressTimer at 600ms calls showContextMenu unconditionally. In MAIN_MENU with no current track, options are useless / no-op.</div>
+<div class="issue-loc">index.html · WheelEngine._bindCenter pointerdown</div>
+<div class="issue-fix"><span class="issue-fix-label">fix</span>Only arm the long-press timer when appState.state === NOW_PLAYING || (state === SUBMENU &amp;&amp; appState._browseTracklist); ignore otherwise.</div>
+</div>
+</div>
+<h2>Passing areas</h2>
+<ul>
+<li><strong>area</strong>: Wire-trace clean — all interactive elements resolve end-to-end from DOM ID through event handler to state mutation to visible effect. · <strong>detail</strong>: Every getElementById call, addEventListener target, and class reference resolves; appState/audioEl/overlay* globals all declared before first read; rAF/setTimeout chains have explicit trigger sites; state→render path is uniform via ScreenRenderer.render().</li>
+<li><strong>area</strong>: Brushed aluminum body with three-layer gradient achieves matte/satin look · <strong>detail</strong>: Linear top-down + repeating-linear-gradient grain stripes + radial base ellipse at 40%/30% combined with multi-layer box-shadow (drop + inset top highlight + 1px rim) reads correctly as silver hardware, not chrome.</li>
+<li><strong>area</strong>: Click-wheel angular drag with setPointerCapture and 12° tick accumulation · <strong>detail</strong>: WheelEngine uses Math.atan2, wraps -180/+180 deltas, accumulates _accDelta across moves, emits one TICK + tick sound per threshold crossing, and uses setPointerCapture so drag continues outside the wheel bounds — exactly the planner directive.</li>
+<li><strong>area</strong>: ID3v2.3/v2.4 parser handles syncsafe v2.4 sizes and all three text encodings inline · <strong>detail</strong>: parseID3 reads ID3 magic, decodes 10-byte header with syncsafe tag size, branches frame-size decode by version (v2.4 syncsafe vs v2.3 BE), and supports encoding bytes 0 (ISO-8859-1), 1+2 (UTF-16 ±BOM), and 3 (UTF-8) — including the UTF-16 double-null APIC description termination.</li>
+<li><strong>area</strong>: Procedural Web Audio sounds use ctx.currentTime scheduling with pre-generated noise buffer · <strong>detail</strong>: Noise buffer is generated once at AudioContext init; tick/buttonPress/confirm slice into a per-call source with proper highpass/lowpass biquads and exponential gain envelopes. Settings.clicker gates UI sounds; powerOn/powerOff use linearRampToValueAtTime on oscillator frequency.</li>
+</ul>
+<h2>Iteration comparison</h2>
+<footer>Auto-rendered review page · open the source JSON next to this file for the full payload.</footer>
+</main>
+</body>
+</html>

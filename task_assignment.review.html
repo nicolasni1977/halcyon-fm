@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Task Assignment · Halcyon iPod Classic Webapp v1</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a4a;
+  --ink-dim: #888;
+  --rule: #e6e2dc;
+  --paper: #faf7f2;
+  --accent: #ff8a6b;
+  --pass: #4a8b56;
+  --warn: #d4ad36;
+  --fail: #c95151;
+  --serif: "Fraunces", Georgia, serif;
+  --sans: "Inter", -apple-system, system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans); color: var(--ink); background: var(--paper);
+  line-height: 1.55; font-size: 15px; -webkit-font-smoothing: antialiased;
+}
+.page { max-width: 920px; margin: 0 auto; padding: 56px 32px 96px; }
+.eyebrow {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--accent); font-weight: 600; margin-bottom: 16px;
+}
+h1 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(32px, 4.5vw, 44px); line-height: 1.1;
+  letter-spacing: -0.02em; margin-bottom: 16px;
+}
+h1 em { color: var(--accent); font-style: italic; }
+.lede {
+  font-family: var(--serif); font-size: 18px; line-height: 1.5;
+  color: var(--ink-soft); max-width: 680px; margin-bottom: 32px;
+}
+h2 {
+  font-family: var(--serif); font-weight: 500; font-size: 24px;
+  letter-spacing: -0.01em; margin: 48px 0 16px;
+}
+h3 {
+  font-family: var(--sans); font-size: 13px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-dim); font-weight: 600;
+  margin: 24px 0 8px;
+}
+p { color: var(--ink-soft); margin-bottom: 12px; }
+ul, ol { padding-left: 22px; color: var(--ink-soft); margin-bottom: 12px; }
+li { margin-bottom: 4px; line-height: 1.5; }
+strong { color: var(--ink); font-weight: 600; }
+em { color: var(--ink); font-style: italic; }
+code, .mono {
+  font-family: var(--mono); font-size: 12.5px;
+  background: #fff; border: 1px solid var(--rule);
+  padding: 1px 6px; color: var(--ink);
+}
+.meta {
+  display: grid; grid-template-columns: auto 1fr; gap: 8px 24px;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  padding: 16px 0; margin-bottom: 32px; font-size: 14px;
+}
+.meta dt {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-dim); font-weight: 500; padding-top: 2px;
+}
+.meta dd { color: var(--ink-soft); }
+.crumb {
+  display: inline-flex; gap: 6px; align-items: center;
+  font-size: 12px; color: var(--ink-dim); margin-bottom: 24px;
+}
+.crumb a { color: var(--ink-dim); text-decoration: none; border-bottom: 1px solid transparent; }
+.crumb a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.crumb .sep { color: var(--rule); }
+
+/* Score gauge */
+.score-card {
+  display: flex; align-items: baseline; gap: 16px;
+  padding: 20px 24px; background: #fff; border: 1px solid var(--rule);
+  margin-bottom: 24px;
+}
+.score-num {
+  font-family: var(--serif); font-size: 56px; line-height: 1;
+  font-weight: 400; letter-spacing: -0.02em;
+}
+.score-num.pass { color: var(--pass); }
+.score-num.warn { color: var(--warn); }
+.score-num.fail { color: var(--fail); }
+.score-of { color: var(--ink-dim); font-size: 16px; }
+.score-action {
+  margin-left: auto; font-size: 12px; letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 4px 10px; border: 1px solid var(--rule-hi);
+}
+.score-action.accept { color: var(--pass); border-color: var(--pass); }
+.score-action.continue, .score-action.revise { color: var(--warn); border-color: var(--warn); }
+.score-action.stop { color: var(--fail); border-color: var(--fail); }
+
+/* Dimension bars */
+.dim-row {
+  display: grid; grid-template-columns: 1fr 60px 80px;
+  gap: 16px; align-items: center;
+  padding: 10px 0; border-bottom: 1px dashed var(--rule);
+}
+.dim-row:last-child { border-bottom: none; }
+.dim-name { color: var(--ink); }
+.dim-bar {
+  height: 6px; background: var(--rule); position: relative; grid-column: 1 / 4;
+}
+.dim-bar::after {
+  content: ""; position: absolute; left: 0; top: 0; height: 100%;
+  width: var(--w, 0%); background: var(--pass);
+}
+.dim-bar.warn::after { background: var(--warn); }
+.dim-bar.fail::after { background: var(--fail); }
+.dim-score { font-family: var(--mono); text-align: right; }
+
+/* Issues */
+.issue-group { margin-bottom: 24px; }
+.issue-group h3 .count { color: var(--ink-dim); font-weight: 400; margin-left: 6px; }
+.issue {
+  padding: 14px 0; border-bottom: 1px dashed var(--rule);
+}
+.issue:last-child { border-bottom: none; }
+.issue-title { font-weight: 600; color: var(--ink); margin-bottom: 4px; display: flex; gap: 8px; align-items: baseline; }
+.issue-id {
+  font-family: var(--mono); font-size: 11px; color: var(--ink-dim);
+  background: #fff; padding: 1px 5px; border: 1px solid var(--rule);
+}
+.issue-desc { color: var(--ink-soft); font-size: 14px; line-height: 1.5; margin-bottom: 6px; }
+.issue-loc { font-family: var(--mono); font-size: 11.5px; color: var(--ink-dim); margin-bottom: 6px; }
+.issue-fix { color: var(--ink-soft); font-size: 13.5px; line-height: 1.5; }
+.issue-fix-label {
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--pass); font-weight: 600; margin-right: 6px;
+}
+.sev-critical { border-left: 3px solid var(--fail); padding-left: 12px; }
+.sev-major    { border-left: 3px solid var(--warn); padding-left: 12px; }
+.sev-minor    { border-left: 3px solid var(--rule); padding-left: 12px; }
+
+/* Lists & tables */
+.kv {
+  display: grid; grid-template-columns: 200px 1fr;
+  gap: 8px 24px; padding: 10px 0; border-bottom: 1px dashed var(--rule);
+  align-items: baseline;
+}
+.kv:last-child { border-bottom: none; }
+.kv .k {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-dim); font-weight: 500;
+}
+.kv .v { color: var(--ink); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font-size: 12px; padding: 3px 10px; border: 1px solid var(--rule);
+  background: #fff; color: var(--ink-soft);
+}
+.chip.accent { color: var(--accent); border-color: var(--accent); background: rgba(255,138,107,0.05); }
+
+/* Index */
+.index-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px; margin-top: 16px;
+}
+.index-card {
+  display: block; padding: 16px; border: 1px solid var(--rule);
+  background: #fff; text-decoration: none; color: var(--ink);
+}
+.index-card:hover { border-color: var(--accent); }
+.index-card-label {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 6px;
+}
+.index-card-title { font-family: var(--serif); font-size: 18px; }
+.index-card-meta { font-size: 12px; color: var(--ink-soft); margin-top: 8px; }
+
+footer {
+  margin-top: 64px; padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  font-size: 11px; color: var(--ink-dim);
+  letter-spacing: 0.04em;
+}
+</style>
+</head>
+<body>
+<main class="page">
+<div class="crumb"><a href="../review.html">review</a> <span class="sep">/</span> <a href="../review.html">Halcyon-Take3</a> <span class="sep">/</span> v1 <span class="sep">/</span> Task assignment</div>
+<p class="eyebrow">Orchestrator Agent · Task Assignment</p>
+<h1>Halcyon iPod Classic Webapp <em>v1</em></h1>
+<p class="lede">A hyper-realistic, single-file HTML webapp that faithfully reproduces the visual appearance and behavior of an Apple iPod Classic 7th generation (silver). The app must match a reference photograph pixel-for-pixel in appearance, implement the full click-wheel interaction model, music library management with IndexedDB, procedural Web Audio sounds, and a complete iPod OS-style state machine — all in one self-contained index.html with inlined CSS and JS.</p>
+<dl class="meta">
+<dt>Audience</dt><dd>Music enthusiasts, retro-tech fans, and developers who appreciate nostalgic UI fidelity. Primary device: desktop browsers; secondary: mobile/portrait phones.</dd>
+<dt>This iteration</dt><dd>This is the first iteration — build the complete foundation. Priority order: (1) Exact visual appearance matching reference photo (body, screen split-pane, click wheel), (2) Core state machine and click wheel interaction, (3) Audio engine with procedural sounds, (4) Library management with IndexedDB, (5) All remaining features (Cover Flow, Now Playing, Settings, keyboard nav, accessibility). Ship a fully working, visually accurate replica.</dd>
+<dt>Iteration</dt><dd>1 / 10</dd>
+</dl>
+<h2>Design direction</h2>
+<p>Photo-realistic hardware skeuomorphism. Every visual element must emulate physical materials: brushed aluminum body, glossy white plastic click wheel, recessed LCD bezel with real split-pane UI, tactile hold switch with orange reveal. NO flat/material design abstractions — this is an interactive replica of a physical device.</p>
+<h2>Pages <span style='color:var(--ink-dim);font-weight:400;font-size:14px;'>(1)</span></h2>
+<ul>
+<li><strong>page_id</strong>: ipod_shell · <strong>page_name</strong>: iPod Device Shell (Single Page App) · <strong>purpose</strong>: The entire app lives on one HTML page. The &#x27;page&#x27; is the iPod device itself, centered on a neutral background. All states (boot, menu, now playing, settings, etc.) are rendered inside the device shell. · <strong>priority</strong>: high</li>
+</ul>
+<h2>Global design requirements</h2>
+<ul>
+<li>color_palette</li>
+<li>typography</li>
+<li>layout_principles</li>
+<li>navigation</li>
+<li>interactions</li>
+</ul>
+<h2>Planner directives</h2>
+<ul>
+<li>Plan the complete file structure as a single index.html. Organize the JS into clearly commented sections: (1) Constants &amp; Config, (2) AudioEngine, (3) LibraryManager (IndexedDB), (4) ID3Parser, (5) StateManager, (6) WheelEngine, (7) ScreenRenderer, (8) BootSequence, (9) EventBindings, (10) Init.</li>
+<li>Plan the CSS structure: (1) Reset &amp; page background, (2) Device shell &amp; edges, (3) Screen module &amp; bezel, (4) Status bar, (5) Split-pane layout, (6) Menu rows &amp; selection highlight, (7) Album art pane, (8) Click wheel &amp; center button, (9) Now Playing layout, (10) Overlays (hold, backlight, quick-scroll, shortcuts), (11) Animations &amp; transitions, (12) Responsive scaling.</li>
+<li>Plan the state machine with explicit state enum and transition table before writing any handler code.</li>
+<li>Plan the WheelEngine as a self-contained class: constructor(element, center), onDrag(angleDelta), onTick(direction), onSectorTap(sector), onCenterPress(), onCenterLongPress(), onCenterRelease(). Use pointer capture (element.setPointerCapture) for reliable drag outside element bounds.</li>
+<li>Plan the ID3 parser as a pure function parseID3(arrayBuffer) → {title, artist, album, trackNum, coverBlob} that handles both v2.3 and v2.4 without external libs. Handle both ISO-8859-1 and UTF-16 text encodings.</li>
+<li>Plan the procedural SVG album art as a function generateMosaicSVG(seed) that creates a deterministic colorful mosaic using the seed for RNG. Output should be an inline SVG string. Must produce vibrant colors (pinks/purples/oranges) not pastels.</li>
+<li>Plan Cover Flow as a function renderCoverFlow(albums, selectedIndex) that produces a set of absolutely-positioned divs with CSS 3D transforms. Center album: rotateY(0deg), scale(1.1). Adjacent albums: rotateY(±45deg), translateX(±40%), scale(0.85). Far albums: rotateY(±75deg), translateX(±70%), scale(0.7).</li>
+<li>Enumerate all localStorage keys upfront: &#x27;halcyon-settings&#x27; (JSON object), &#x27;halcyon-library-meta&#x27; (array of track metadata without blobs), &#x27;halcyon-playlists&#x27; (including On-The-Go), &#x27;halcyon-ratings&#x27; (trackId → 0-5), &#x27;halcyon-playcounts&#x27; (trackId → number).</li>
+<li>Plan the backlight system: a setInterval checking last-interaction timestamp, a dim overlay element, and a _consumedByWake flag set in pointerdown/keydown when dimmed, cleared in pointerup/keyup after backlight-wake check.</li>
+</ul>
+<h2>Generator directives</h2>
+<ul>
+<li>Generate the COMPLETE single index.html file. No placeholder comments like &#x27;// TODO implement&#x27;. Every feature must be fully implemented.</li>
+<li>CRITICAL VISUAL REQUIREMENT: The iPod body must use at minimum 3 layered CSS gradients to achieve the brushed aluminum look. Do NOT use a flat silver color. Use: (1) base radial gradient center-bright to edge-dark, (2) vertical repeating-linear-gradient with 1px stripes at 2% opacity for grain, (3) a linear gradient top-to-bottom for lighting.</li>
+<li>CRITICAL VISUAL REQUIREMENT: The click wheel MUST be a true donut/ring shape. Use one of: (a) CSS clip-path with polygon cutout, (b) SVG with a circle and inner circle subtracted, or (c) a positioned outer circle with a matching inner circle overlay. The center button is a SEPARATE element on top, not part of the ring.</li>
+<li>CRITICAL VISUAL REQUIREMENT: The split-pane layout with status bar, left menu list (8 items), and right album art pane must be pixel-precise as described. The blue selection gradient must span the full pane width with white text and &#x27;&gt;&#x27; chevron. This is the most photographed screen of the reference.</li>
+<li>CRITICAL BEHAVIORAL REQUIREMENT: The WheelEngine pointer event handling must use setPointerCapture on pointerdown so drag continues outside the wheel element. Angular delta accumulates across the full drag; only emit ticks when threshold crossed, NOT on every mousemove.</li>
+<li>CRITICAL BEHAVIORAL REQUIREMENT: Implement the _consumedByWake pattern exactly: in pointerdown handler, if backlightDim===true, set _consumedByWake=true, wake backlight, and return (do NOT process the event further). In pointerup, check _consumedByWake at the TOP before any sector dispatch, clear it, and return.</li>
+<li>Generate the ID3 parser inline without any npm/CDN imports. The parser must correctly read &#x27;ID3&#x27; magic bytes, parse tag size (syncsafe integer), iterate frames, decode TIT2/TPE1/TALB/TRCK text frames with encoding byte, and extract APIC binary data.</li>
+<li>Generate the procedural mosaic SVG: create a 4×4 or 5×5 grid of rectangles, each with a color from a deterministic palette derived from the seed (use simple LCG RNG). Include diagonal gradient overlays on some cells. Output as a data URL for use as background-image.</li>
+<li>Generate all Web Audio sounds as described — do NOT use any external audio files for UI sounds. Noise buffers should be pre-generated once at AudioContext init and stored in module scope.</li>
+<li>Generate Cover Flow with full CSS 3D transforms. The 3D carousel container must have: transform-style: preserve-3d; perspective: 800px. Each album card transitions smoothly between positions on wheel scroll.</li>
+<li>The context menu popover (long-press center) must render as an overlay within the screen with 4 options: &#x27;Browse Artist&#x27;, &#x27;Browse Album&#x27;, &#x27;Add to On-The-Go&#x27;, &#x27;Start Genius&#x27;. Must be dismissible with MENU button.</li>
+<li>Generate the &#x27;?&#x27; keyboard shortcuts overlay as a full-screen (or screen-sized) dark semi-transparent overlay listing all shortcuts in a clean two-column layout.</li>
+<li>Ensure the device scales correctly on mobile: the entire iPod transform: scale() approach means the device HTML structure does not reflow — only the outer wrapper changes. Use a ResizeObserver or window resize listener to recalculate --ipod-scale.</li>
+<li>The demo library auto-load: on DOMContentLoaded, check IndexedDB for existing tracks. If count === 0, attempt to fetch assets/music/track1.mp3 etc. If fetch fails (404), silently skip and leave library empty — show &#x27;No songs. Drop MP3s here.&#x27; in the menu list.</li>
+<li>Implement Playlists including On-The-Go: On-The-Go playlist is built by &#x27;Add to On-The-Go&#x27; from context menu. It is persistent in localStorage. Standard playlists can be created (for demo: just show On-The-Go if library has tracks, else empty).</li>
+<li>All text in the screen must use the device&#x27;s simulated font size, NOT the browser&#x27;s zoom level. Font sizes should be in px values relative to the device&#x27;s rendered pixel size, set via CSS custom properties updated on scale change.</li>
+<li>DO NOT reference any external URLs, CDNs, or Google Fonts. The file must work completely offline (aside from optional demo MP3/JPG assets).</li>
+</ul>
+<h2>Acceptance criteria</h2>
+<ul>
+<li>Device body renders with correct 1.674:1 aspect ratio and brushed aluminum appearance (layered gradients, NOT flat silver)</li>
+<li>Screen shows the split-pane layout: 55% left menu list with 8 items / 45% right album art, with status bar spanning full width showing iPod label, play indicator, and green battery</li>
+<li>First menu item (&#x27;Music&#x27;) is highlighted with blue gradient (#3A78D8→#5A99F0) with white text and &#x27;&gt;&#x27; chevron</li>
+<li>Click wheel renders as a true donut ring (white, glossy) with MENU/⏮/⏭/⏯ labels at correct cardinal positions</li>
+<li>Center button is a plain white circle with NO labels, slightly recessed</li>
+<li>Top edge shows HOLD switch and headphone jack; bottom edge shows dock connector</li>
+<li>Boot animation: &#x27;Halcyon&#x27; wordmark fades in/holds/fades out before menu appears; power-on sweep plays</li>
+<li>Click wheel drag correctly scrolls menu selection using atan2 angle math, emitting ticks every 12 degrees</li>
+<li>Sector taps correctly fire MENU, PREV, NEXT, PLAY/PAUSE actions</li>
+<li>Hold switch toggles: when engaged, all input is blocked, orange strip visible on switch, orange lock icon in status bar</li>
+<li>Backlight dims after idle, wakes on first input without firing action (_consumedByWake pattern)</li>
+<li>Drop MP3s onto device → library ingests → ID3 tags parsed → tracks appear in Music menu</li>
+<li>Audio plays via HTMLAudioElement with Blob URL; scrubber updates in real-time</li>
+<li>Now Playing screen shows split-pane with track info left, album art right, scrubber at bottom</li>
+<li>All 5 procedural Web Audio sounds (tick, button, confirm, power-on, power-off) play correctly</li>
+<li>Keyboard fallback: ↑↓ scroll, Enter confirm, Backspace menu, Space play/pause, ←→ prev/next</li>
+<li>Cover Flow renders with CSS 3D perspective transforms on Music → Cover Flow</li>
+<li>Settings all persist to localStorage; EQ/repeat/shuffle/backlight all functional</li>
+<li>File is a single self-contained index.html with all CSS and JS inlined</li>
+<li>No external CDN/URL references; works offline</li>
+<li>Device scales correctly on mobile portrait via transform: scale() approach</li>
+<li>Total HTML file size &lt; 150KB (excluding demo assets)</li>
+</ul>
+<footer>Auto-rendered review page · open the source JSON next to this file for the full payload.</footer>
+</main>
+</body>
+</html>

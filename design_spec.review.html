@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Design Spec · Halcyon iPod Classic Webapp v1</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a4a;
+  --ink-dim: #888;
+  --rule: #e6e2dc;
+  --paper: #faf7f2;
+  --accent: #ff8a6b;
+  --pass: #4a8b56;
+  --warn: #d4ad36;
+  --fail: #c95151;
+  --serif: "Fraunces", Georgia, serif;
+  --sans: "Inter", -apple-system, system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans); color: var(--ink); background: var(--paper);
+  line-height: 1.55; font-size: 15px; -webkit-font-smoothing: antialiased;
+}
+.page { max-width: 920px; margin: 0 auto; padding: 56px 32px 96px; }
+.eyebrow {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--accent); font-weight: 600; margin-bottom: 16px;
+}
+h1 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(32px, 4.5vw, 44px); line-height: 1.1;
+  letter-spacing: -0.02em; margin-bottom: 16px;
+}
+h1 em { color: var(--accent); font-style: italic; }
+.lede {
+  font-family: var(--serif); font-size: 18px; line-height: 1.5;
+  color: var(--ink-soft); max-width: 680px; margin-bottom: 32px;
+}
+h2 {
+  font-family: var(--serif); font-weight: 500; font-size: 24px;
+  letter-spacing: -0.01em; margin: 48px 0 16px;
+}
+h3 {
+  font-family: var(--sans); font-size: 13px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-dim); font-weight: 600;
+  margin: 24px 0 8px;
+}
+p { color: var(--ink-soft); margin-bottom: 12px; }
+ul, ol { padding-left: 22px; color: var(--ink-soft); margin-bottom: 12px; }
+li { margin-bottom: 4px; line-height: 1.5; }
+strong { color: var(--ink); font-weight: 600; }
+em { color: var(--ink); font-style: italic; }
+code, .mono {
+  font-family: var(--mono); font-size: 12.5px;
+  background: #fff; border: 1px solid var(--rule);
+  padding: 1px 6px; color: var(--ink);
+}
+.meta {
+  display: grid; grid-template-columns: auto 1fr; gap: 8px 24px;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  padding: 16px 0; margin-bottom: 32px; font-size: 14px;
+}
+.meta dt {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-dim); font-weight: 500; padding-top: 2px;
+}
+.meta dd { color: var(--ink-soft); }
+.crumb {
+  display: inline-flex; gap: 6px; align-items: center;
+  font-size: 12px; color: var(--ink-dim); margin-bottom: 24px;
+}
+.crumb a { color: var(--ink-dim); text-decoration: none; border-bottom: 1px solid transparent; }
+.crumb a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.crumb .sep { color: var(--rule); }
+
+/* Score gauge */
+.score-card {
+  display: flex; align-items: baseline; gap: 16px;
+  padding: 20px 24px; background: #fff; border: 1px solid var(--rule);
+  margin-bottom: 24px;
+}
+.score-num {
+  font-family: var(--serif); font-size: 56px; line-height: 1;
+  font-weight: 400; letter-spacing: -0.02em;
+}
+.score-num.pass { color: var(--pass); }
+.score-num.warn { color: var(--warn); }
+.score-num.fail { color: var(--fail); }
+.score-of { color: var(--ink-dim); font-size: 16px; }
+.score-action {
+  margin-left: auto; font-size: 12px; letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 4px 10px; border: 1px solid var(--rule-hi);
+}
+.score-action.accept { color: var(--pass); border-color: var(--pass); }
+.score-action.continue, .score-action.revise { color: var(--warn); border-color: var(--warn); }
+.score-action.stop { color: var(--fail); border-color: var(--fail); }
+
+/* Dimension bars */
+.dim-row {
+  display: grid; grid-template-columns: 1fr 60px 80px;
+  gap: 16px; align-items: center;
+  padding: 10px 0; border-bottom: 1px dashed var(--rule);
+}
+.dim-row:last-child { border-bottom: none; }
+.dim-name { color: var(--ink); }
+.dim-bar {
+  height: 6px; background: var(--rule); position: relative; grid-column: 1 / 4;
+}
+.dim-bar::after {
+  content: ""; position: absolute; left: 0; top: 0; height: 100%;
+  width: var(--w, 0%); background: var(--pass);
+}
+.dim-bar.warn::after { background: var(--warn); }
+.dim-bar.fail::after { background: var(--fail); }
+.dim-score { font-family: var(--mono); text-align: right; }
+
+/* Issues */
+.issue-group { margin-bottom: 24px; }
+.issue-group h3 .count { color: var(--ink-dim); font-weight: 400; margin-left: 6px; }
+.issue {
+  padding: 14px 0; border-bottom: 1px dashed var(--rule);
+}
+.issue:last-child { border-bottom: none; }
+.issue-title { font-weight: 600; color: var(--ink); margin-bottom: 4px; display: flex; gap: 8px; align-items: baseline; }
+.issue-id {
+  font-family: var(--mono); font-size: 11px; color: var(--ink-dim);
+  background: #fff; padding: 1px 5px; border: 1px solid var(--rule);
+}
+.issue-desc { color: var(--ink-soft); font-size: 14px; line-height: 1.5; margin-bottom: 6px; }
+.issue-loc { font-family: var(--mono); font-size: 11.5px; color: var(--ink-dim); margin-bottom: 6px; }
+.issue-fix { color: var(--ink-soft); font-size: 13.5px; line-height: 1.5; }
+.issue-fix-label {
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--pass); font-weight: 600; margin-right: 6px;
+}
+.sev-critical { border-left: 3px solid var(--fail); padding-left: 12px; }
+.sev-major    { border-left: 3px solid var(--warn); padding-left: 12px; }
+.sev-minor    { border-left: 3px solid var(--rule); padding-left: 12px; }
+
+/* Lists & tables */
+.kv {
+  display: grid; grid-template-columns: 200px 1fr;
+  gap: 8px 24px; padding: 10px 0; border-bottom: 1px dashed var(--rule);
+  align-items: baseline;
+}
+.kv:last-child { border-bottom: none; }
+.kv .k {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-dim); font-weight: 500;
+}
+.kv .v { color: var(--ink); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font-size: 12px; padding: 3px 10px; border: 1px solid var(--rule);
+  background: #fff; color: var(--ink-soft);
+}
+.chip.accent { color: var(--accent); border-color: var(--accent); background: rgba(255,138,107,0.05); }
+
+/* Index */
+.index-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px; margin-top: 16px;
+}
+.index-card {
+  display: block; padding: 16px; border: 1px solid var(--rule);
+  background: #fff; text-decoration: none; color: var(--ink);
+}
+.index-card:hover { border-color: var(--accent); }
+.index-card-label {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 6px;
+}
+.index-card-title { font-family: var(--serif); font-size: 18px; }
+.index-card-meta { font-size: 12px; color: var(--ink-soft); margin-top: 8px; }
+
+footer {
+  margin-top: 64px; padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  font-size: 11px; color: var(--ink-dim);
+  letter-spacing: 0.04em;
+}
+</style>
+</head>
+<body>
+<main class="page">
+<div class="crumb"><a href="../review.html">review</a> <span class="sep">/</span> <a href="../review.html">Halcyon-Take3</a> <span class="sep">/</span> v1 <span class="sep">/</span> Design spec</div>
+<p class="eyebrow">Planner Agent · Design Specification</p>
+<h1>Design spec <em>v1</em></h1>
+<h2>Chosen archetypes</h2>
+<div class="chips"><span class="chip accent">primary</span><span class="chip accent">secondary</span><span class="chip accent">exemplar_anchors</span><span class="chip accent">rationale</span><span class="chip accent">signature_interaction</span></div>
+<h2>Design system</h2>
+<div class="kv"><div class="k">typography</div><div class="v"><strong>font_heading:</strong> Georgia, serif<br><strong>font_body:</strong> &#x27;Helvetica Neue&#x27;, Helvetica, Arial, sans-serif<br><strong>font_mono:</strong> &#x27;Courier New&#x27;, Courier, monospace<br><strong>note:</strong> No web font imports — system fonts only. All screen sizes scaled via --ipod-font-scale CSS custom property.<br><strong>scale:</strong> {&#x27;boot_wordmark&#x27;: {&#x27;size&#x27;: &#x27;22px&#x27;, &#x27;weight&#x27;: &#x27;400&#x27;, &#x27;line_height&#x27;: &#x27;1.2&#x27;, &#x27;font&#x27;: &#x27;Georgia, serif&#x27;}, &#x27;menu_item&#x27;: {&#x27;size&#x27;: &#x27;13px&#x27;, &#x27;weight&#x27;: &#x27;400&#x27;, &#x27;line_height&#x27;: &#x27;1.0&#x27;}, &#x27;track_title&#x27;: {&#x27;size&#x27;: &#x27;12px&#x27;, &#x27;weight&#x27;: &#x27;700&#x27;, &#x27;line_height&#x27;: &#x27;1.2&#x27;}, &#x27;artist_name&#x27;: {&#x27;size&#x27;: &#x27;11px&#x27;, &#x27;weight&#x27;: &#x27;400&#x27;, &#x27;line_height&#x27;: &#x27;1.2&#x27;}, &#x27;album_name&#x27;: {&#x27;size&#x27;: &#x27;10px&#x27;, &#x27;weight&#x27;: &#x27;400&#x27;, &#x27;line_height&#x27;: &#x27;1.2&#x27;}, &#x27;status_label&#x27;: {&#x27;size&#x27;: &#x27;10px&#x27;, &#x27;weight&#x27;: &#x27;700&#x27;, &#x27;line_height&#x27;: &#x27;1.0&#x27;}, &#x27;scrubber_time&#x27;: {&#x27;size&#x27;: &#x27;10px&#x27;, &#x27;weight&#x27;: &#x27;400&#x27;, &#x27;line_height&#x27;: &#x27;1.0&#x27;}, &#x27;wheel_label&#x27;: {&#x27;size&#x27;: &#x27;10px&#x27;, &#x27;weight&#x27;: &#x27;700&#x27;, &#x27;letter_spacing&#x27;: &#x27;0.1em&#x27;}, &#x27;quick_scroll_letter&#x27;: {&#x27;size&#x27;: &#x27;60px&#x27;, &#x27;weight&#x27;: &#x27;700&#x27;, &#x27;line_height&#x27;: &#x27;1.0&#x27;}, &#x27;submenu_breadcrumb&#x27;: {&#x27;size&#x27;: &#x27;11px&#x27;, &#x27;weight&#x27;: &#x27;700&#x27;, &#x27;line_height&#x27;: &#x27;1.0&#x27;}}</div></div>
+<div class="kv"><div class="k">spacing</div><div class="v"><strong>unit:</strong> 8px<br><strong>scale:</strong> 4px, 8px, 12px, 16px, 24px, 32px, 48px, 64px, 96px, 128px<br><strong>screen_row_height:</strong> 15px<br><strong>status_bar_height:</strong> 18px<br><strong>menu_left_padding:</strong> 8px<br><strong>screen_margin_from_body:</strong> 8px</div></div>
+<h2>Components <span style='color:var(--ink-dim);font-weight:400;font-size:14px;'>(27)</span></h2>
+<h3>(unnamed)</h3>
+<p>Outer brushed aluminum iPod body</p>
+<h3>(unnamed)</h3>
+<p>Top hardware edge with hold switch and headphone jack</p>
+<h3>(unnamed)</h3>
+<p>Toggleable hold switch slider</p>
+<div class="kv"><div class="k">variants</div><div class="v"><div class="chips"><span class="chip">default</span><span class="chip">engaged</span></div></div></div>
+<h3>(unnamed)</h3>
+<p>3.5mm headphone port visual</p>
+<h3>(unnamed)</h3>
+<p>LCD screen with bezel</p>
+<h3>(unnamed)</h3>
+<p>Top status bar spanning full screen width</p>
+<h3>(unnamed)</h3>
+<p>Green battery indicator in status bar</p>
+<h3>(unnamed)</h3>
+<p>Two-pane screen layout below status bar</p>
+<h3>(unnamed)</h3>
+<p>55% left pane showing menu list</p>
+<h3>(unnamed)</h3>
+<p>45% right pane showing album art</p>
+<h3>(unnamed)</h3>
+<p>Single menu row item</p>
+<div class="kv"><div class="k">variants</div><div class="v"><div class="chips"><span class="chip">default</span><span class="chip">selected</span></div></div></div>
+<h3>(unnamed)</h3>
+<p>White glossy donut ring — outer click wheel</p>
+<h3>(unnamed)</h3>
+<p>Plain white circle center button, no labels</p>
+<h3>(unnamed)</h3>
+<p>Cardinal direction labels on wheel ring</p>
+<h3>(unnamed)</h3>
+<p>Bottom edge with dock connector</p>
+<h3>(unnamed)</h3>
+<p>Dock connector rectangular slot</p>
+<h3>(unnamed)</h3>
+<p>Full-width playback scrubber at bottom of screen</p>
+<h3>(unnamed)</h3>
+<p>Semi-transparent dim overlay over screen on idle</p>
+<h3>(unnamed)</h3>
+<p>Orange lock icon replaces &#x27;iPod&#x27; label in status bar when hold engaged</p>
+<h3>(unnamed)</h3>
+<p>Large letter overlay on fast wheel spin</p>
+<h3>(unnamed)</h3>
+<p>Context popover on 600ms center-button long press</p>
+<h3>(unnamed)</h3>
+<p>? key shortcuts reference overlay</p>
+<h3>(unnamed)</h3>
+<p>File drop zone overlay on device body</p>
+<h3>(unnamed)</h3>
+<p>Full-screen 3D CSS carousel for Cover Flow view</p>
+<h3>(unnamed)</h3>
+<p>Individual album card in Cover Flow</p>
+<div class="kv"><div class="k">variants</div><div class="v"><div class="chips"><span class="chip">center</span><span class="chip">adjacent_left</span><span class="chip">adjacent_right</span><span class="chip">far_left</span><span class="chip">far_right</span></div></div></div>
+<h3>(unnamed)</h3>
+<p>5-star rating row in Now Playing</p>
+<h3>(unnamed)</h3>
+<p>Procedural deterministic mosaic SVG default album art</p>
+<h2>Pages <span style='color:var(--ink-dim);font-weight:400;font-size:14px;'>(1)</span></h2>
+<h3>(unnamed)</h3>
+<ul>
+<li><strong>section_id</strong>: page_background · <strong>component</strong>: none — body CSS</li>
+<li><strong>section_id</strong>: device_body · <strong>component</strong>: device_shell</li>
+<li><strong>section_id</strong>: top_edge · <strong>component</strong>: top_edge_strip</li>
+<li><strong>section_id</strong>: screen_module · <strong>component</strong>: screen_module</li>
+<li><strong>section_id</strong>: click_wheel_region</li>
+<li><strong>section_id</strong>: bottom_edge · <strong>component</strong>: bottom_edge_strip</li>
+</ul>
+<h2>Navigation flow</h2>
+<ul>
+<li>primary_input</li>
+<li>secondary_input</li>
+<li>hold_guard</li>
+<li>backlight_guard</li>
+<li>keyboard_map</li>
+<li>page_transitions</li>
+</ul>
+<h2>Accessibility</h2>
+<div class="kv"><div class="k">color_contrast</div><div class="v">All screen text meets WCAG AA within the simulated screen; status bar text 4.5:1 on #F0F0F0</div></div><div class="kv"><div class="k">focus_indicators</div><div class="v">Visible focus ring on hold switch and center button; color: {colors.primary}</div></div><div class="kv"><div class="k">aria_landmarks</div><div class="v">True</div></div><div class="kv"><div class="k">aria_current</div><div class="v">aria-current='true' on selected menu row</div></div><div class="kv"><div class="k">aria_labels</div><div class="v">{&#x27;device_shell&#x27;: &#x27;Halcyon iPod Classic&#x27;, &#x27;center_button&#x27;: &#x27;Select&#x27;, &#x27;wheel_sectors&#x27;: &#x27;Menu, Previous, Next, Play Pause&#x27;, &#x27;hold_switch&#x27;: &#x27;Hold switch&#x27;}</div></div><div class="kv"><div class="k">keyboard_navigation</div><div class="v">True</div></div><div class="kv"><div class="k">skip_links</div><div class="v">False</div></div><div class="kv"><div class="k">touch_targets</div><div class="v">Center button and hold switch ≥ 44x44px equivalent at reference scale</div></div><div class="kv"><div class="k">screen_reader_notes</div><div class="v">Screen states announced via aria-live region on state changes</div></div>
+<footer>Auto-rendered review page · open the source JSON next to this file for the full payload.</footer>
+</main>
+</body>
+</html>

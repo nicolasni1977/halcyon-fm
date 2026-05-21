@@ -1,0 +1,440 @@
+{
+  "project_name": "Halcyon iPod Classic Webapp",
+  "iteration": 1,
+  "max_iterations": 10,
+  "requirement_summary": "A hyper-realistic, single-file HTML webapp that faithfully reproduces the visual appearance and behavior of an Apple iPod Classic 7th generation (silver). The app must match a reference photograph pixel-for-pixel in appearance, implement the full click-wheel interaction model, music library management with IndexedDB, procedural Web Audio sounds, and a complete iPod OS-style state machine — all in one self-contained index.html with inlined CSS and JS.",
+  "target_audience": "Music enthusiasts, retro-tech fans, and developers who appreciate nostalgic UI fidelity. Primary device: desktop browsers; secondary: mobile/portrait phones.",
+  "design_direction": "Photo-realistic hardware skeuomorphism. Every visual element must emulate physical materials: brushed aluminum body, glossy white plastic click wheel, recessed LCD bezel with real split-pane UI, tactile hold switch with orange reveal. NO flat/material design abstractions — this is an interactive replica of a physical device.",
+  "pages": [
+    {
+      "page_id": "ipod_shell",
+      "page_name": "iPod Device Shell (Single Page App)",
+      "purpose": "The entire app lives on one HTML page. The 'page' is the iPod device itself, centered on a neutral background. All states (boot, menu, now playing, settings, etc.) are rendered inside the device shell.",
+      "priority": "high",
+      "sections": [
+        {
+          "section_id": "page_background",
+          "name": "Page Background & Centering",
+          "purpose": "Provide a subtle, non-distracting backdrop that makes the silver iPod pop visually.",
+          "requirements": [
+            "Background: deep charcoal or near-black radial gradient (#1a1a1f center, #0d0d10 edges)",
+            "iPod device centered both horizontally and vertically using flexbox",
+            "Responsive scaling: device height = min(100vh - 80px, 100vw * 1.674) with CSS custom property --scale",
+            "On portrait mobile: device fills ~90vw, no scroll"
+          ],
+          "ux_notes": "The background should feel like a product photography lightbox — the iPod is the hero, nothing competes with it."
+        },
+        {
+          "section_id": "device_body",
+          "name": "iPod Device Body",
+          "purpose": "The outer aluminum shell that contains all hardware elements.",
+          "requirements": [
+            "Tall rectangle with aspect ratio ~1.674:1 (height:width), e.g. 430px × 257px at reference scale",
+            "Border-radius: ~14px (scaled with device)",
+            "Background: CSS radial/linear gradient simulating brushed aluminum — center ~#D6D8DA, edges ~#B8BABD, subtle vertical linear-gradient stripes (repeating, 1px wide, 1-2% opacity) to simulate grain",
+            "Cool grey tone — NOT chrome/mirror, NOT warm silver. Hex range #C8CACE to #D6D8DA in lit center",
+            "Darker border/edge treatment: ~3px gradient border using box-shadow or outline, darkening to ~#9A9CA0 at rim",
+            "Soft drop shadow: 0 20px 60px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)",
+            "Subtle inner bevel: inset box-shadow 0 1px 0 rgba(255,255,255,0.4) along top edge",
+            "role='application' aria-label='Halcyon iPod Classic' on shell element"
+          ],
+          "ux_notes": "The body must look like physical brushed aluminum. Use multiple layered CSS gradients and box-shadows. Reference: the body should feel matte/satin, NOT shiny."
+        },
+        {
+          "section_id": "top_edge",
+          "name": "Top Edge — Hold Switch & Headphone Jack",
+          "purpose": "Thin horizontal strip at the top of the device showing physical port/control details.",
+          "requirements": [
+            "Thin strip ~8px tall, slightly darker than body (#B0B2B5), spanning full width with same border-radius at top corners",
+            "HOLD SWITCH: left side, small rounded-rectangle slider (~24px wide × 5px tall), CSS-only toggle. Default state: neutral gray fill. Toggled state: orange backing strip (#FF6A00) slides into view, orange lock icon replaces 'iPod' label in status bar",
+            "Hold switch is a real clickable element — clicking toggles holdState boolean",
+            "HEADPHONE JACK: right side, small dark circle (~6px diameter), dark #1a1a1a fill, 1px lighter grey border, subtle inset shadow to look like a real 3.5mm port",
+            "Both elements positioned via absolute positioning within the top edge strip"
+          ],
+          "ux_notes": "These are tiny details but important for realism. When hold is engaged, ALL wheel and button inputs must be silently ignored (no actions fired)."
+        },
+        {
+          "section_id": "screen_module",
+          "name": "Screen Module (LCD + Bezel)",
+          "purpose": "The LCD display area in the upper ~40% of the device, showing all app UI states.",
+          "requirements": [
+            "Positioned in upper third of body, centered horizontally, ~8px margin from body sides",
+            "BEZEL: solid near-black border ~3-4px (color #1a1a1a), slight inset appearance via inner box-shadow",
+            "Screen aspect ratio approximately 1.5:1 (wider than tall), fills ~82% of body width",
+            "Screen background when OFF: pure black #000000",
+            "BACKLIGHT DIM: a semi-transparent overlay (rgba(0,0,0,0.7)) layered over screen content when idle timer expires",
+            "All screen states rendered as absolutely-positioned child divs that swap visibility",
+            "Screen corner radius inside bezel: ~3px"
+          ],
+          "ux_notes": "The bezel gives the recessed LCD look critical to the reference photo. The 3-4px solid dark border must be visible and consistent on all four sides."
+        },
+        {
+          "section_id": "screen_boot",
+          "name": "Screen State: Boot Animation",
+          "purpose": "First thing shown after power-on; branded boot sequence.",
+          "requirements": [
+            "Black background fills entire screen",
+            "Serif 'Halcyon' wordmark centered — font: Georgia, serif; color: white; font-size ~22px at reference scale",
+            "Fade in over 600ms, hold 800ms, fade out over 400ms (CSS keyframe animation or JS-driven opacity transitions)",
+            "After fade-out: transition to MAIN_MENU state",
+            "NO Apple logo — use 'Halcyon' wordmark only",
+            "Power-on audio sweep plays simultaneously: 200→1200Hz sine over 300ms (Web Audio API)"
+          ],
+          "ux_notes": "Boot animation sets the premium tone. Timing must be precise: 600 + 800 + 400 = 1800ms total before menu appears."
+        },
+        {
+          "section_id": "screen_main_menu",
+          "name": "Screen State: Main Menu (Split-Pane Layout)",
+          "purpose": "The primary navigation screen, showing the classic iPod split-pane design.",
+          "requirements": [
+            "FULL SCREEN split into TWO PANES side-by-side: LEFT 55% (menu list), RIGHT 45% (album art)",
+            "STATUS BAR: spans full width, ~18px tall, white/light grey background (#F0F0F0)",
+            "  - LEFT of status bar: 'iPod' label — small bold sans-serif, ~10px, black #1a1a1a (replaced by orange lock icon when hold is engaged)",
+            "  - CENTER of status bar: small blue play triangle ▶ (only visible when music is playing); Unicode or SVG, ~8px, #1a6FFF",
+            "  - RIGHT of status bar: green battery pill — rounded rectangle ~18px×8px, fill #4CD964, border #2a9040, small internal highlight bar",
+            "LEFT PANE: white background #FFFFFF, shows 8 menu items stacked vertically",
+            "  Menu items: Music, Videos, Photos, Podcasts, Extras, Settings, Shuffle Songs, Now Playing",
+            "  Each row: ~14-15px tall, font Helvetica/Arial, 13px, regular weight, black text, 8px left padding",
+            "  SELECTED ROW (Music by default): full-width blue gradient highlight (#3A78D8 top → #5A99F0 bottom), white text, white '>' chevron right-aligned ~6px from right edge",
+            "  Non-selected rows: black text on white background",
+            "  Vertical separator line between left and right pane: 1px #C0C0C0",
+            "RIGHT PANE: album art preview fills entire pane edge-to-edge",
+            "  Default album art: procedural SVG mosaic with saturated colors (pinks #FF4B8B, purples #8A2BE2, oranges #FF6420) — minimum 8-tile grid pattern, NOT a solid color block",
+            "  When a song is loaded, show that song's APIC cover art via canvas/img element",
+            "  Art should be object-fit: cover to fill pane without letterboxing"
+          ],
+          "ux_notes": "The split-pane layout is the single most critical visual differentiator. 55/45 split is approximate — must look balanced. The blue selected-row gradient must look like the real iPod highlight, not a flat blue."
+        },
+        {
+          "section_id": "screen_now_playing",
+          "name": "Screen State: Now Playing",
+          "purpose": "The playback view shown when a track is playing.",
+          "requirements": [
+            "Maintains split-pane structure: LEFT side shows track info, RIGHT side shows album art",
+            "LEFT PANE contents (top to bottom):",
+            "  - Track title: bold, 12px, black, truncated with ellipsis",
+            "  - Artist name: regular, 11px, dark grey #555",
+            "  - Album name: regular, 10px, mid grey #777",
+            "  - 5-star rating: 5 Unicode stars (★☆), tappable when center-button mode = rating; filled stars #FFB800, empty stars #CCCCCC",
+            "  - 'X of Y' track position: 10px grey",
+            "SCRUBBER BAR: horizontal bar spanning FULL WIDTH at bottom of screen (below both panes)",
+            "  - Track elapsed time left-aligned, remaining time right-aligned, both ~10px grey",
+            "  - Progress bar: filled portion #3A78D8, unfilled #DDDDDD, height 3px",
+            "  - When center-button mode = scrubber: scrubber thumb becomes draggable",
+            "CENTER BUTTON MODES cycle: default → scrubber-active → rating-active → shuffle-indicator → repeat-indicator → back to default",
+            "Status bar at top: same as main menu but with song title scrolling marquee replacing 'iPod' label if title too long"
+          ],
+          "ux_notes": "Scrubber must update in real-time as audio plays. Rating stars must be immediately visually responsive to selection."
+        },
+        {
+          "section_id": "screen_submenu",
+          "name": "Screen State: Submenus (full hierarchy)",
+          "purpose": "Generic submenu view for navigating the music/settings hierarchy.",
+          "requirements": [
+            "Same split-pane layout as main menu",
+            "Left pane shows current submenu items (dynamically generated from library/config)",
+            "Right pane: if browsing music content, show relevant album art or first matching art; else show default mosaic",
+            "Breadcrumb title: above the menu rows, small bold text showing current menu level (e.g. 'Music', 'Artists', 'Album Name')",
+            "Back navigation: MENU button on click wheel navigates up one level",
+            "COVER FLOW VIEW: when Music → Cover Flow is selected, transition to full-screen 3D carousel mode",
+            "  - CSS perspective(800px) rotateY for side cards, center card flat",
+            "  - 3D carousel spans full screen width",
+            "  - Wheel drag scrolls through albums",
+            "  - Track list slides up from bottom when center is pressed"
+          ],
+          "ux_notes": "Submenu must handle variable-length lists gracefully. If more than 8 items, show scroll indicator (small triangle at bottom of list pane)."
+        },
+        {
+          "section_id": "screen_settings",
+          "name": "Screen State: Settings",
+          "purpose": "iPod settings panel.",
+          "requirements": [
+            "Accessible from main menu 'Settings' item",
+            "Settings items in left pane: Clicker (On/Off toggle), Backlight Timer (2/5/10/15/20/30s/Always On), Brightness (1-5 levels), EQ (Off/Rock/Pop/Jazz/Classical), Repeat (Off/One/All), Shuffle (Off/Songs/Albums), Reset Settings",
+            "Current value shown right-aligned in each row, grey #888",
+            "Selected item highlighted with same blue gradient as main menu",
+            "Center button cycles through options for selected setting",
+            "Right pane shows relevant icon/graphic: e.g. speaker graphic for EQ, clock icon for backlight"
+          ],
+          "ux_notes": "Settings changes must persist to localStorage immediately on change."
+        },
+        {
+          "section_id": "screen_hold_overlay",
+          "name": "Screen Overlay: Hold Lock",
+          "purpose": "Visual feedback when hold switch is engaged.",
+          "requirements": [
+            "Semi-transparent overlay (rgba(0,0,0,0.0)) — hold does NOT darken screen",
+            "Status bar 'iPod' label replaced by orange lock icon (🔒 or SVG padlock) in orange #FF6A00",
+            "Hold switch on top edge shows orange strip",
+            "All input events from wheel and buttons are silently consumed (no actions) while hold is on"
+          ],
+          "ux_notes": "The hold state must be visually obvious via the status bar lock icon AND the physical switch appearance."
+        },
+        {
+          "section_id": "screen_off",
+          "name": "Screen State: Off / Power Down",
+          "purpose": "Device powered off state.",
+          "requirements": [
+            "Screen fades to pure black over 400ms",
+            "Power-off audio sweep: 1200→200Hz sine over 250ms (Web Audio API)",
+            "Entire screen area is black #000000",
+            "Long-press Play/Pause (1500ms) triggers this: appState.state = 'OFF'",
+            "Any button press when OFF triggers power-on sequence (BOOTING state)"
+          ],
+          "ux_notes": "Power-off sweep must start immediately on long-press detection at 1500ms. The screen fade and audio sweep must be simultaneous."
+        },
+        {
+          "section_id": "click_wheel",
+          "name": "Click Wheel Hardware Component",
+          "purpose": "The primary input device — a circular white plastic ring with center button.",
+          "requirements": [
+            "Positioned below the screen, centered horizontally in the body",
+            "Outer diameter: ~80% of body width",
+            "OUTER RING: pure white #F8F8F8 with slight glossy gradient (radial highlight top-left, white→#EFEFEF)",
+            "Ring width (donut): outer radius minus inner radius = approximately 28% of outer radius",
+            "Glossy treatment: CSS radial-gradient from rgba(255,255,255,0.7) top-left to transparent, simulating plastic gloss",
+            "Subtle reflection band: thin horizontal semi-transparent white stripe at ~30% from top",
+            "WHEEL LABELS (4 positions, color #A0A0A4, font-size ~10px, letter-spacing 0.1em, bold caps):",
+            "  - TOP: text 'MENU', positioned ~12px below top inner edge of ring, centered horizontally",
+            "  - LEFT: ⏮ or '|◀◀' SVG path, at leftmost inner edge, vertically centered",
+            "  - RIGHT: ⏭ or '▶▶|' SVG path, at rightmost inner edge, vertically centered",
+            "  - BOTTOM: ⏯ or '▶❚❚' SVG path, ~12px above bottom inner edge, centered horizontally",
+            "CENTER BUTTON: plain white circle #FFFFFF, ~50-55% of inner ring diameter",
+            "  - Slightly recessed: inset box-shadow 0 1px 3px rgba(0,0,0,0.25)",
+            "  - Subtle top-left highlight: radial-gradient from rgba(255,255,255,0.9) to transparent",
+            "  - NO text, NO icon, NO label on center button",
+            "CLICK WHEEL DRAG INTERACTION:",
+            "  - pointer-angle = Math.atan2(dy, dx) relative to wheel center",
+            "  - Accumulate delta angle; emit TICK every ~12 degrees",
+            "  - Each tick: advance menu selection 1 row + play wheel-tick sound (if clicker on)",
+            "  - pointerdown starts tracking; pointermove updates angle; pointerup evaluates sector",
+            "SECTOR TAP DETECTION (on pointerup with minimal drag):",
+            "  - TOP sector (315°-45°): MENU action (navigate back)",
+            "  - LEFT sector (225°-315°): Previous track / restart",
+            "  - RIGHT sector (45°-135°): Next track",
+            "  - BOTTOM sector (135°-225°): Play/Pause toggle",
+            "  - Center button: separate element with own pointer events",
+            "HOLD CENTER 600ms: trigger context popover (Browse Artist, Browse Album, Add to On-The-Go, Start Genius)",
+            "HOLD PLAY/PAUSE 1500ms: power off",
+            "BACKLIGHT WAKE: first input after dim wakes backlight WITHOUT firing action (_consumedByWake flag)"
+          ],
+          "ux_notes": "The wheel drag feel is THE most important interaction. Angular velocity should feel natural — not too sensitive, not too sluggish. 30 ticks per full revolution = 12 degrees per tick. Ensure pointer capture (setPointerCapture) so drag works outside the element."
+        },
+        {
+          "section_id": "bottom_edge",
+          "name": "Bottom Edge — Dock Connector",
+          "purpose": "Physical dock connector detail at bottom of device.",
+          "requirements": [
+            "Thin strip ~8px tall, same treatment as top edge (#B0B2B5)",
+            "Centered rectangular slot: ~60px wide × 4px tall, dark #2a2a2a fill, slight inset shadow",
+            "Pin detail: very subtle horizontal lines inside dock slot to suggest connector pins (CSS repeating-linear-gradient)",
+            "NOT interactive — purely decorative"
+          ],
+          "ux_notes": "Small detail but contributes to overall hardware realism."
+        },
+        {
+          "section_id": "library_management",
+          "name": "Music Library System",
+          "purpose": "Backend logic for music ingestion, storage, and playback.",
+          "requirements": [
+            "DRAG-AND-DROP ZONE: visual overlay appears when files are dragged over the iPod body",
+            "  - Semi-transparent overlay with 'Drop MP3s here' text",
+            "  - Accepts multiple .mp3 files simultaneously",
+            "ID3 TAG PARSING: parse ID3v2.3 and v2.4 tags from ArrayBuffer without external libraries",
+            "  - Extract: TIT2 (title), TPE1 (artist), TALB (album), TRCK (track number), APIC (cover art)",
+            "  - Fallback: use filename as title if TIT2 missing",
+            "INDEXEDDB STORAGE: store audio Blobs and cover art Blobs in 'halcyon-db' database",
+            "  - Object stores: 'tracks' (id, title, artist, album, trackNum, duration, audioBlob, coverBlob)",
+            "  - Settings + metadata in localStorage (key: 'halcyon-settings', 'halcyon-library-meta')",
+            "DEMO LIBRARY: on first run if library empty, attempt to load from assets/music/track1.mp3, track2.mp3, track3.mp3 with covers in assets/covers/cover1.jpg, cover2.jpg, cover3.jpg",
+            "  - Demo tracks: CC0/CC-BY licensed tracks (referenced by path, not embedded)",
+            "  - Show graceful message if demo assets not found (library stays empty, user can drag-drop)",
+            "PLAYBACK: use HTMLAudioElement with Blob URL from IndexedDB",
+            "  - timeupdate event drives scrubber bar",
+            "  - ended event triggers next track logic (respecting repeat/shuffle modes)"
+          ],
+          "ux_notes": "Library parsing must be synchronous-feeling — show progress indicator in screen during batch import. IndexedDB operations are async; use async/await throughout."
+        },
+        {
+          "section_id": "audio_engine",
+          "name": "Procedural Sound Engine",
+          "purpose": "Web Audio API-based sound effects for all UI interactions.",
+          "requirements": [
+            "AudioContext: lazy-init on first user gesture (pointerdown or keydown)",
+            "WHEEL TICK sound: 8ms white-noise burst → BiquadFilterNode type='highpass' frequency=2200Hz → GainNode with exponential ramp from 0.3 to 0.001 over 8ms",
+            "BUTTON PRESS sound: 12ms noise burst → BiquadFilterNode type='lowpass' frequency=6000Hz → GainNode with exponential decay — 'thock' character",
+            "SELECT CONFIRM sound: button tock + 20ms silence + 15ms OscillatorNode 800Hz sine at 0.4 gain",
+            "POWER ON sound: OscillatorNode sweeping 200→1200Hz over 300ms (linearRampToValueAtTime on frequency)",
+            "POWER OFF sound: OscillatorNode sweeping 1200→200Hz over 250ms",
+            "All sounds respect settings.clicker boolean (false = mute UI sounds)",
+            "Music playback audio does NOT go through AudioContext (use HTMLAudioElement directly)",
+            "iOS unlock: first wheel touch on mobile fires AudioContext.resume() + play-suspend trick to unlock autoplay"
+          ],
+          "ux_notes": "Sounds must fire in <5ms of the triggering event. Use AudioContext.currentTime scheduling, not setTimeout. Cache noise buffers to avoid regenerating each tick."
+        },
+        {
+          "section_id": "keyboard_shortcuts",
+          "name": "Keyboard Navigation",
+          "purpose": "Full keyboard fallback for accessibility and desktop use.",
+          "requirements": [
+            "↑ / ↓ arrow keys: scroll menu selection up/down (same as wheel tick)",
+            "Enter: center button action (same as center button press)",
+            "Backspace: MENU button action (navigate back)",
+            "Space: Play/Pause toggle",
+            "← arrow: Previous track / restart",
+            "→ arrow: Next track",
+            "'?' key: show keyboard shortcuts overlay",
+            "All keyboard events: check holdState first (if held, ignore ALL keys)",
+            "All keyboard events: check backlight dim state (if dim, wake first, consume event)",
+            "SHORTCUTS OVERLAY: semi-transparent modal listing all shortcuts, dismiss with Escape or '?'",
+            "aria-current='true' on currently selected menu row",
+            "aria-label on wheel sectors: 'Menu', 'Previous', 'Next', 'Play Pause'",
+            "aria-label on center button: 'Select'"
+          ],
+          "ux_notes": "Keyboard must feel as responsive as the wheel. The shortcuts overlay ('?') is a nice power-user feature."
+        },
+        {
+          "section_id": "state_machine",
+          "name": "Application State Machine",
+          "purpose": "Central state management controlling all screen transitions.",
+          "requirements": [
+            "States: OFF | BOOTING | MAIN_MENU | SUBMENU | COVER_FLOW | NOW_PLAYING | SETTINGS",
+            "Transitions:",
+            "  OFF → BOOTING (any button press)",
+            "  BOOTING → MAIN_MENU (after 1800ms boot animation)",
+            "  MAIN_MENU → SUBMENU (center button on menu item)",
+            "  MAIN_MENU → NOW_PLAYING (center on Now Playing, or auto on track start)",
+            "  MAIN_MENU → SETTINGS (center on Settings)",
+            "  SUBMENU → SUBMENU (deeper navigation)",
+            "  SUBMENU → COVER_FLOW (Music → Cover Flow)",
+            "  SUBMENU → NOW_PLAYING (selecting a track)",
+            "  SUBMENU → MAIN_MENU (MENU button at depth 1)",
+            "  NOW_PLAYING ↔ SUBMENU (MENU button from now playing)",
+            "  any state + hold-switch-on → hold overlay active (input blocked, state preserved)",
+            "appState object: { state, menuStack[], currentMenu[], selectedIndex, currentTrack, playlist[], playMode, repeatMode, shuffleMode, holdActive, backlightTimer, centerButtonMode }",
+            "NEW-TRACK RESET: enterNowPlaying() must call audio.pause() + audio.src='' before setting new src",
+            "Quick-scroll: angular velocity > threshold → show large centered letter overlay (black bg, white letter, 60px, opacity 0.8)"
+          ],
+          "ux_notes": "State machine must be a clean switch/case or map-based dispatch. No spaghetti conditionals. Each state handler is a pure function receiving action + current state."
+        }
+      ]
+    }
+  ],
+  "global_design_requirements": {
+    "color_palette": {
+      "primary": "#3A78D8",
+      "secondary": "#D6D8DA",
+      "accent": "#FF6A00",
+      "background": "#111114",
+      "text": "#1a1a1a",
+      "rationale": "Primary blue #3A78D8 matches the iPod classic menu selection highlight gradient. Secondary silver #D6D8DA is the brushed aluminum body base. Accent orange #FF6A00 is the hold switch indicator. Near-black page background ensures the silver device pops. All colors derived from reference photo description.",
+      "extended": {
+        "body_silver_lit": "#D6D8DA",
+        "body_silver_shadow": "#C8CACE",
+        "body_rim": "#9A9CA0",
+        "screen_bezel": "#1a1a1a",
+        "wheel_white": "#F8F8F8",
+        "wheel_label_grey": "#A0A0A4",
+        "battery_green": "#4CD964",
+        "selection_blue_top": "#3A78D8",
+        "selection_blue_bottom": "#5A99F0",
+        "status_bar_bg": "#F0F0F0"
+      }
+    },
+    "typography": {
+      "heading_font": "Georgia, serif (Halcyon boot wordmark only)",
+      "body_font": "'Helvetica Neue', Helvetica, Arial, sans-serif (all screen UI text)",
+      "scale": "Screen UI: 10px labels, 12px body, 13px menu items, 14px track titles. All sizes relative to device scale factor (CSS custom property --ipod-font-scale).",
+      "notes": "Font sizes are small because the simulated screen is small. Crisp rendering is critical — use -webkit-font-smoothing: antialiased on screen element. No web font imports — system fonts only for offline use."
+    },
+    "layout_principles": [
+      "Single page application — no routing, no multiple HTML pages",
+      "Device-centric layout: iPod shell is the only UI element, centered on page",
+      "All internal layout uses absolute positioning within the device shell (not CSS grid/flexbox inside screen)",
+      "8px base unit for all internal spacing within screen UI",
+      "Responsive scaling via single CSS custom property --ipod-scale applied to transform: scale()",
+      "Split-pane screen layout: left 55% menu, right 45% art — enforced at all times in menu/submenu states",
+      "No external CSS frameworks — pure vanilla CSS",
+      "No external JS libraries — pure vanilla JS",
+      "Total bundle: single index.html, target <150KB excluding audio/image assets"
+    ],
+    "navigation": {
+      "type": "Hardware click wheel (primary) + keyboard shortcuts (secondary)",
+      "items": [
+        "MENU (back)",
+        "PREV (left)",
+        "NEXT (right)",
+        "PLAY/PAUSE (bottom)",
+        "SELECT (center)"
+      ],
+      "behavior": "All navigation through click wheel sectors and center button. No on-screen tap targets for navigation except the hold switch. Touch events map to same pointer events as mouse."
+    },
+    "interactions": [
+      "Click wheel drag: angular delta → menu scroll with tick sounds",
+      "Sector taps: MENU, PREV, NEXT, PLAY/PAUSE actions",
+      "Center button press: context-sensitive select/confirm",
+      "Center button long press 600ms: context popover",
+      "Play/Pause long press 1500ms: power off",
+      "Hold switch click: toggles hold state with orange visual feedback",
+      "Drag-and-drop MP3s onto device body: library ingestion",
+      "Cover Flow: 3D CSS perspective carousel, wheel-driven",
+      "Backlight auto-dim after idle: any input wakes without action",
+      "Quick-scroll letter overlay on fast wheel spin"
+    ]
+  },
+  "planner_directives": [
+    "Plan the complete file structure as a single index.html. Organize the JS into clearly commented sections: (1) Constants & Config, (2) AudioEngine, (3) LibraryManager (IndexedDB), (4) ID3Parser, (5) StateManager, (6) WheelEngine, (7) ScreenRenderer, (8) BootSequence, (9) EventBindings, (10) Init.",
+    "Plan the CSS structure: (1) Reset & page background, (2) Device shell & edges, (3) Screen module & bezel, (4) Status bar, (5) Split-pane layout, (6) Menu rows & selection highlight, (7) Album art pane, (8) Click wheel & center button, (9) Now Playing layout, (10) Overlays (hold, backlight, quick-scroll, shortcuts), (11) Animations & transitions, (12) Responsive scaling.",
+    "Plan the state machine with explicit state enum and transition table before writing any handler code.",
+    "Plan the WheelEngine as a self-contained class: constructor(element, center), onDrag(angleDelta), onTick(direction), onSectorTap(sector), onCenterPress(), onCenterLongPress(), onCenterRelease(). Use pointer capture (element.setPointerCapture) for reliable drag outside element bounds.",
+    "Plan the ID3 parser as a pure function parseID3(arrayBuffer) → {title, artist, album, trackNum, coverBlob} that handles both v2.3 and v2.4 without external libs. Handle both ISO-8859-1 and UTF-16 text encodings.",
+    "Plan the procedural SVG album art as a function generateMosaicSVG(seed) that creates a deterministic colorful mosaic using the seed for RNG. Output should be an inline SVG string. Must produce vibrant colors (pinks/purples/oranges) not pastels.",
+    "Plan Cover Flow as a function renderCoverFlow(albums, selectedIndex) that produces a set of absolutely-positioned divs with CSS 3D transforms. Center album: rotateY(0deg), scale(1.1). Adjacent albums: rotateY(±45deg), translateX(±40%), scale(0.85). Far albums: rotateY(±75deg), translateX(±70%), scale(0.7).",
+    "Enumerate all localStorage keys upfront: 'halcyon-settings' (JSON object), 'halcyon-library-meta' (array of track metadata without blobs), 'halcyon-playlists' (including On-The-Go), 'halcyon-ratings' (trackId → 0-5), 'halcyon-playcounts' (trackId → number).",
+    "Plan the backlight system: a setInterval checking last-interaction timestamp, a dim overlay element, and a _consumedByWake flag set in pointerdown/keydown when dimmed, cleared in pointerup/keyup after backlight-wake check."
+  ],
+  "generator_directives": [
+    "Generate the COMPLETE single index.html file. No placeholder comments like '// TODO implement'. Every feature must be fully implemented.",
+    "CRITICAL VISUAL REQUIREMENT: The iPod body must use at minimum 3 layered CSS gradients to achieve the brushed aluminum look. Do NOT use a flat silver color. Use: (1) base radial gradient center-bright to edge-dark, (2) vertical repeating-linear-gradient with 1px stripes at 2% opacity for grain, (3) a linear gradient top-to-bottom for lighting.",
+    "CRITICAL VISUAL REQUIREMENT: The click wheel MUST be a true donut/ring shape. Use one of: (a) CSS clip-path with polygon cutout, (b) SVG with a circle and inner circle subtracted, or (c) a positioned outer circle with a matching inner circle overlay. The center button is a SEPARATE element on top, not part of the ring.",
+    "CRITICAL VISUAL REQUIREMENT: The split-pane layout with status bar, left menu list (8 items), and right album art pane must be pixel-precise as described. The blue selection gradient must span the full pane width with white text and '>' chevron. This is the most photographed screen of the reference.",
+    "CRITICAL BEHAVIORAL REQUIREMENT: The WheelEngine pointer event handling must use setPointerCapture on pointerdown so drag continues outside the wheel element. Angular delta accumulates across the full drag; only emit ticks when threshold crossed, NOT on every mousemove.",
+    "CRITICAL BEHAVIORAL REQUIREMENT: Implement the _consumedByWake pattern exactly: in pointerdown handler, if backlightDim===true, set _consumedByWake=true, wake backlight, and return (do NOT process the event further). In pointerup, check _consumedByWake at the TOP before any sector dispatch, clear it, and return.",
+    "Generate the ID3 parser inline without any npm/CDN imports. The parser must correctly read 'ID3' magic bytes, parse tag size (syncsafe integer), iterate frames, decode TIT2/TPE1/TALB/TRCK text frames with encoding byte, and extract APIC binary data.",
+    "Generate the procedural mosaic SVG: create a 4×4 or 5×5 grid of rectangles, each with a color from a deterministic palette derived from the seed (use simple LCG RNG). Include diagonal gradient overlays on some cells. Output as a data URL for use as background-image.",
+    "Generate all Web Audio sounds as described — do NOT use any external audio files for UI sounds. Noise buffers should be pre-generated once at AudioContext init and stored in module scope.",
+    "Generate Cover Flow with full CSS 3D transforms. The 3D carousel container must have: transform-style: preserve-3d; perspective: 800px. Each album card transitions smoothly between positions on wheel scroll.",
+    "The context menu popover (long-press center) must render as an overlay within the screen with 4 options: 'Browse Artist', 'Browse Album', 'Add to On-The-Go', 'Start Genius'. Must be dismissible with MENU button.",
+    "Generate the '?' keyboard shortcuts overlay as a full-screen (or screen-sized) dark semi-transparent overlay listing all shortcuts in a clean two-column layout.",
+    "Ensure the device scales correctly on mobile: the entire iPod transform: scale() approach means the device HTML structure does not reflow — only the outer wrapper changes. Use a ResizeObserver or window resize listener to recalculate --ipod-scale.",
+    "The demo library auto-load: on DOMContentLoaded, check IndexedDB for existing tracks. If count === 0, attempt to fetch assets/music/track1.mp3 etc. If fetch fails (404), silently skip and leave library empty — show 'No songs. Drop MP3s here.' in the menu list.",
+    "Implement Playlists including On-The-Go: On-The-Go playlist is built by 'Add to On-The-Go' from context menu. It is persistent in localStorage. Standard playlists can be created (for demo: just show On-The-Go if library has tracks, else empty).",
+    "All text in the screen must use the device's simulated font size, NOT the browser's zoom level. Font sizes should be in px values relative to the device's rendered pixel size, set via CSS custom properties updated on scale change.",
+    "DO NOT reference any external URLs, CDNs, or Google Fonts. The file must work completely offline (aside from optional demo MP3/JPG assets)."
+  ],
+  "iteration_focus": "This is the first iteration — build the complete foundation. Priority order: (1) Exact visual appearance matching reference photo (body, screen split-pane, click wheel), (2) Core state machine and click wheel interaction, (3) Audio engine with procedural sounds, (4) Library management with IndexedDB, (5) All remaining features (Cover Flow, Now Playing, Settings, keyboard nav, accessibility). Ship a fully working, visually accurate replica.",
+  "acceptance_criteria": [
+    "Device body renders with correct 1.674:1 aspect ratio and brushed aluminum appearance (layered gradients, NOT flat silver)",
+    "Screen shows the split-pane layout: 55% left menu list with 8 items / 45% right album art, with status bar spanning full width showing iPod label, play indicator, and green battery",
+    "First menu item ('Music') is highlighted with blue gradient (#3A78D8→#5A99F0) with white text and '>' chevron",
+    "Click wheel renders as a true donut ring (white, glossy) with MENU/⏮/⏭/⏯ labels at correct cardinal positions",
+    "Center button is a plain white circle with NO labels, slightly recessed",
+    "Top edge shows HOLD switch and headphone jack; bottom edge shows dock connector",
+    "Boot animation: 'Halcyon' wordmark fades in/holds/fades out before menu appears; power-on sweep plays",
+    "Click wheel drag correctly scrolls menu selection using atan2 angle math, emitting ticks every 12 degrees",
+    "Sector taps correctly fire MENU, PREV, NEXT, PLAY/PAUSE actions",
+    "Hold switch toggles: when engaged, all input is blocked, orange strip visible on switch, orange lock icon in status bar",
+    "Backlight dims after idle, wakes on first input without firing action (_consumedByWake pattern)",
+    "Drop MP3s onto device → library ingests → ID3 tags parsed → tracks appear in Music menu",
+    "Audio plays via HTMLAudioElement with Blob URL; scrubber updates in real-time",
+    "Now Playing screen shows split-pane with track info left, album art right, scrubber at bottom",
+    "All 5 procedural Web Audio sounds (tick, button, confirm, power-on, power-off) play correctly",
+    "Keyboard fallback: ↑↓ scroll, Enter confirm, Backspace menu, Space play/pause, ←→ prev/next",
+    "Cover Flow renders with CSS 3D perspective transforms on Music → Cover Flow",
+    "Settings all persist to localStorage; EQ/repeat/shuffle/backlight all functional",
+    "File is a single self-contained index.html with all CSS and JS inlined",
+    "No external CDN/URL references; works offline",
+    "Device scales correctly on mobile portrait via transform: scale() approach",
+    "Total HTML file size < 150KB (excluding demo assets)"
+  ]
+}

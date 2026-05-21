@@ -1,0 +1,352 @@
+{
+  "project_name": "Halcyon iPod Classic Webapp",
+  "iteration": 1,
+  "timestamp": "2026-05-21T00:00:00Z",
+  "scores": {
+    "requirement_coverage": {
+      "score": 21,
+      "max": 25,
+      "breakdown": [
+        {
+          "requirement": "Visual replica — body, screen split-pane, click wheel, edges",
+          "status": "met",
+          "evidence": "Device 257x430 with layered gradients, status bar + 55/45 split pane, donut ring with ::after, top + bottom edge strips with hold switch, jack, dock slot.",
+          "deduction": 0
+        },
+        {
+          "requirement": "Click wheel atan2 angular drag w/ 12° ticks + sector taps + setPointerCapture",
+          "status": "met",
+          "evidence": "WheelEngine class with proper atan2, _accDelta accumulation, threshold-based tick emission, sector dispatch on tap-vs-drag distinction.",
+          "deduction": 0
+        },
+        {
+          "requirement": "All five procedural Web Audio sounds (tick/button/confirm/powerOn/powerOff)",
+          "status": "met",
+          "evidence": "AudioEngine implements all five with pre-generated noise buffer and proper filter/gain envelopes; respects settings.clicker.",
+          "deduction": 0
+        },
+        {
+          "requirement": "IndexedDB library + ID3v2.3/v2.4 parser (TIT2/TPE1/TALB/TRCK/APIC, ISO-8859-1 + UTF-16 + UTF-8)",
+          "status": "met",
+          "evidence": "LibraryManager has open/add/get/delete/count; parseID3 handles syncsafe v2.4 sizes, multiple encodings, APIC extraction with UTF-16 double-null termination.",
+          "deduction": 0
+        },
+        {
+          "requirement": "Submenu list scrolling for >8 items + quick-scroll letter overlay",
+          "status": "partial",
+          "evidence": "renderSubmenu slices items.slice(0,8) — selection beyond index 7 becomes invisible. Quick-scroll overlay implemented but list never scrolls to keep selected in view.",
+          "deduction": 4
+        }
+      ]
+    },
+    "visual_design_quality": {
+      "score": 20,
+      "max": 25,
+      "breakdown": [
+        {
+          "criterion": "Color system + brushed aluminum body",
+          "status": "pass",
+          "detail": "Three layered gradients (radial base + grain stripes + top-down lighting) plus rim inset shadow. Tone in spec range.",
+          "deduction": 0
+        },
+        {
+          "criterion": "Typography hierarchy",
+          "status": "pass",
+          "detail": "Helvetica/Arial body, Georgia for boot wordmark, sizes match spec (10/11/12/13px). System fonts only as required.",
+          "deduction": 0
+        },
+        {
+          "criterion": "Donut wheel + glossy center button + cardinal labels",
+          "status": "warning",
+          "detail": "Donut achieved via ::after over wheel-outer, but the inner ::after re-paints the brushed-aluminum gradient which is visible as a ring around the center button instead of looking like a true hole; reflection band sits at 30% but is a thin straight line, less convincing than a radial highlight.",
+          "deduction": 2
+        },
+        {
+          "criterion": "Status bar polish (iPod label / play triangle / green battery pill)",
+          "status": "pass",
+          "detail": "Status bar 18px tall, iPod label bold 10px black, battery pill 18x8px with #4CD964 fill, inner white highlight bar via ::after.",
+          "deduction": 0
+        },
+        {
+          "criterion": "Selected row gradient + chevron + split-pane vertical divider",
+          "status": "pass",
+          "detail": "linear-gradient 180deg from #3A78D8 to #5A99F0 with white text and right-aligned > chevron; 1px #C0C0C0 divider between panes.",
+          "deduction": 0
+        }
+      ]
+    },
+    "ux_and_navigation": {
+      "score": 19,
+      "max": 25,
+      "breakdown": [
+        {
+          "criterion": "State machine + menu hierarchy navigation",
+          "status": "pass",
+          "detail": "Seven states wired; menuStack with breadcrumb; MENU button properly pops; SELECT context-aware per state.",
+          "deduction": 0
+        },
+        {
+          "criterion": "Hold switch behavior (input block + status icon)",
+          "status": "pass",
+          "detail": "Switch click toggles holdActive; orange engaged style; updateStatusLabels swaps to orange SVG lock; all input handlers check holdActive first.",
+          "deduction": 0
+        },
+        {
+          "criterion": "Backlight dim + _consumedByWake pattern",
+          "status": "pass",
+          "detail": "1s setInterval checks idle; pointerdown/keydown set _consumedByWake and dispatch WAKE_BACKLIGHT, pointerup clears flag. Correctly does not fire actions on wake.",
+          "deduction": 0
+        },
+        {
+          "criterion": "Keyboard shortcuts parity with wheel",
+          "status": "pass",
+          "detail": "Arrows/Enter/Backspace/Space/?/Esc all bound; OFF state wakes on press; ? toggles overlay.",
+          "deduction": 0
+        },
+        {
+          "criterion": "Power-off long-press (1500ms on Play/Pause) cleanly exits playback path",
+          "status": "warning",
+          "detail": "After POWER_OFF fires from the auxiliary _playLongTimer, the WheelEngine's pointerup still proceeds to dispatch PLAY_PAUSE which (because state is now OFF) re-fires POWER_ON — device immediately re-boots after being powered off. See CRIT-002.",
+          "deduction": 6
+        }
+      ]
+    },
+    "code_quality_and_responsiveness": {
+      "score": 21,
+      "max": 25,
+      "breakdown": [
+        {
+          "criterion": "Semantic HTML + ARIA",
+          "status": "pass",
+          "detail": "role='application' on shell, role='switch' + aria-checked on hold, aria-label on center/wheel sectors, aria-current on selected row, aria-live polite region.",
+          "deduction": 0
+        },
+        {
+          "criterion": "CSS organization",
+          "status": "pass",
+          "detail": "12 numbered sections matching planner directive; custom properties absent (uses repeated literals instead of CSS vars).",
+          "deduction": 1
+        },
+        {
+          "criterion": "JS modular structure",
+          "status": "pass",
+          "detail": "Ten sections clearly demarcated; IIFE modules for AudioEngine/LibraryManager/ScreenRenderer/BootSequence; class for WheelEngine.",
+          "deduction": 0
+        },
+        {
+          "criterion": "Dual pointerdown handlers on wheel-outer",
+          "status": "warning",
+          "detail": "WheelEngine binds pointerdown AND an auxiliary listener for power-off-long-press binds another pointerdown on the same element. They race and can both fire. Power-off path should be moved INTO WheelEngine where the existing pointer-tracking already knows the sector.",
+          "deduction": 2
+        },
+        {
+          "criterion": "Self-contained single file + responsive scaling",
+          "status": "pass",
+          "detail": "All CSS/JS inlined, no external URLs/CDNs. recalcScale recomputes transform on resize + ResizeObserver.",
+          "deduction": 0
+        }
+      ]
+    },
+    "total_score": 81,
+    "max_score": 100,
+    "pass_threshold": 80,
+    "passed": true
+  },
+  "critical_issues": [
+    {
+      "id": "CRIT-001",
+      "severity": "critical",
+      "category": "functional_regression",
+      "title": "Submenu rendering hard-caps at 8 items; selection past index 7 invisible",
+      "description": "ScreenRenderer.renderSubmenu uses items.slice(0,8) before rendering rows. When the menu has >8 items (e.g. an artist with many tracks, an All Songs list), wheel-scrolling past index 7 updates appState.selectedIndex but the row never appears in the pane — the user sees no feedback for scrolls 8..N. Scroll indicator is shown but list does not scroll.",
+      "location": {
+        "file": "index.html",
+        "selector": "ScreenRenderer.renderSubmenu",
+        "line_range": "renderSubmenu function body"
+      },
+      "expected": "List scrolls (or virtualizes) so that selectedIndex is always visible — drop or shift the window of visible rows when selection crosses the bottom edge.",
+      "actual": "items.slice(0,8) always renders the first 8 rows regardless of selectedIndex.",
+      "fix_suggestion": "Compute a window: const start = Math.max(0, Math.min(items.length-8, appState.selectedIndex-7)); const visible = items.slice(start, start+8); then render with (start+i) === selectedIndex selection check, and toggle scroll indicators top/bottom based on start.",
+      "impact": "Music libraries with more than 8 songs/artists/albums become un-navigable past row 7."
+    },
+    {
+      "id": "CRIT-002",
+      "severity": "critical",
+      "category": "functional_regression",
+      "title": "Power-off immediately re-boots because WheelEngine pointerup still fires PLAY_PAUSE",
+      "description": "An auxiliary pointerdown listener on #wheel-outer starts _playLongTimer for bottom-sector and dispatches POWER_OFF at 1500ms. But WheelEngine's own pointerup handler runs on release, detects bottom sector with low drag distance, and dispatches PLAY_PAUSE. In handlePlayPause, when state===OFF it dispatches POWER_ON. Net effect: holding bottom for 1.5s powers off AND immediately powers back on.",
+      "location": {
+        "file": "index.html",
+        "selector": "#wheel-outer event bindings + WheelEngine._bindWheel pointerup",
+        "line_range": "Event Bindings section (_playLongTimer) and WheelEngine._bindWheel"
+      },
+      "expected": "Long-press power-off cleanly exits to OFF state with no follow-on PLAY_PAUSE or POWER_ON.",
+      "actual": "POWER_OFF → POWER_ON within the same gesture; user cannot turn the iPod off.",
+      "fix_suggestion": "Move the long-press logic INTO WheelEngine: on pointerdown record startTime and target sector; on pointerup, if sector==='PLAY_PAUSE' and (Date.now()-startTime)>=1500 dispatch POWER_OFF and SKIP the regular sector dispatch (early return). Remove the separate _playLongTimer pointerdown listener.",
+      "impact": "Core hardware behavior (power off) is non-functional; the device cannot be powered down by the user."
+    }
+  ],
+  "major_issues": [
+    {
+      "id": "MAJ-001",
+      "severity": "major",
+      "category": "visual_design",
+      "title": "Click-wheel inner cutout shows brushed-aluminum gradient, not a recessed plastic hole",
+      "description": "#wheel-outer::after fills the inner 56% with the SAME body gradient (radial 40%/30% + grain + lighting). On a real iPod the area under the center button is the white plastic ring continuing INWARD, not the silver body. The result reads as a hole punched through to the case rather than a circular recess.",
+      "location": {
+        "file": "index.html",
+        "selector": "#wheel-outer::after"
+      },
+      "fix_suggestion": "Replace the ::after background with a flat #C8CACE or a very subtle radial gradient (#D8D8D8 → #C8C8C8) — no grain stripes — and add inset shadow inset 0 2px 4px rgba(0,0,0,0.2) to suggest a recessed well."
+    },
+    {
+      "id": "MAJ-002",
+      "severity": "major",
+      "category": "code_quality",
+      "title": "Cover Flow card images leak object URLs on every re-render",
+      "description": "renderCoverFlow creates URL.createObjectURL(album.coverBlob) for each card every time it runs; img.onload revokes that specific URL but if the user scrolls quickly through cards, prior renders' image-loads may not fire before the next render replaces the parent, leaking blob URLs. Same pattern in updateArtForCurrentMenu for sub-pane.",
+      "location": {
+        "file": "index.html",
+        "selector": "renderCoverFlow / updateArtForCurrentMenu"
+      },
+      "fix_suggestion": "Cache blob→URL mapping on a Map keyed by track.id, generate URL once on library load, reuse on every render. Only revoke on track delete."
+    },
+    {
+      "id": "MAJ-003",
+      "severity": "major",
+      "category": "ux_navigation",
+      "title": "Quick-scroll overlay shows letter of CURRENTLY selected item, not the upcoming alphabetical jump",
+      "description": "_showQuickScroll renders list[appState.selectedIndex][0]. The spec describes the iPod behavior as 'releasing wheel jumps selection to next item starting with that letter', i.e. the letter shown should be the current alphabetical bucket and on release selection should snap to that letter. Current implementation just shows the letter of whatever row is currently highlighted (which is moving every tick anyway).",
+      "location": {
+        "file": "index.html",
+        "selector": "WheelEngine._showQuickScroll"
+      },
+      "fix_suggestion": "Group sorted list into A-Z buckets, track an _activeBucket that increments by one letter every N ticks of high-velocity scrolling, render the bucket letter, and on pointerup snap selectedIndex to the first item in that bucket."
+    },
+    {
+      "id": "MAJ-004",
+      "severity": "major",
+      "category": "ux_navigation",
+      "title": "Marquee for long Now Playing title uses fixed 8s loop irrespective of title length",
+      "description": "@keyframes marquee animates -50% translateX over 8s for ALL title lengths; very long titles scroll fast and very short titles (just over 15 chars) scroll painfully slow. The 30%-70% hold-then-scroll keyframe pattern also pauses awkwardly.",
+      "location": {
+        "file": "index.html",
+        "selector": ".status-marquee-inner / @keyframes marquee"
+      },
+      "fix_suggestion": "Compute the title pixel width on render, set animation-duration via inline style proportional to width (px / 30 = seconds for ~30 px/s), and simplify keyframes to a plain 0% translateX(0) → 100% translateX(-50%) loop with a CSS animation-delay for the initial hold."
+    },
+    {
+      "id": "MAJ-005",
+      "severity": "major",
+      "category": "code_quality",
+      "title": "Bottom-edge dock slot and headphone jack are inside #ipod-device but no constraint prevents overflow on small scales",
+      "description": "On small viewports recalcScale shrinks the wrapper but #ipod-wrapper.width=257 / height=430 stays the layout box. flexbox centers, but margin: 40+20 px reserved is per-side, not symmetric. On viewport widths < 277 px (257+20) the wrapper visually clips by 1-2 px on phones, especially with notch insets — no viewport-fit=cover safe-area handling.",
+      "location": {
+        "file": "index.html",
+        "selector": "<meta name=viewport> + recalcScale"
+      },
+      "fix_suggestion": "Add viewport-fit=cover to the meta tag, wrap the body in padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); and in recalcScale use document.documentElement.clientWidth/Height which respects safe areas."
+    }
+  ],
+  "minor_issues": [
+    {
+      "id": "MIN-001",
+      "severity": "minor",
+      "category": "code_quality",
+      "title": "CSS uses literal color hex values throughout instead of CSS custom properties",
+      "description": "Color tokens defined in design_spec (--ipod-primary, --body-silver-lit, etc.) are inlined as literals everywhere. Changes require multi-site edits.",
+      "location": {
+        "file": "index.html",
+        "selector": "all CSS sections"
+      },
+      "fix_suggestion": "Declare :root { --c-primary:#3A78D8; --c-silver:#D6D8DA; ...} at top and use var(--c-primary) throughout."
+    },
+    {
+      "id": "MIN-002",
+      "severity": "minor",
+      "category": "visual_design",
+      "title": "Wheel reflection band is a 2px-tall straight rectangle, not a curved glossy highlight",
+      "description": "#wheel-reflection is rect 5%-95% wide, 2px tall at top:30%. Real plastic gloss is a curved bright spot top-left.",
+      "location": {
+        "file": "index.html",
+        "selector": "#wheel-reflection"
+      },
+      "fix_suggestion": "Replace with an SVG ellipse mask or a CSS radial-gradient(ellipse at 30% 25%, rgba(255,255,255,0.6) 0%, transparent 35%) layered into #wheel-outer."
+    },
+    {
+      "id": "MIN-003",
+      "severity": "minor",
+      "category": "ux_navigation",
+      "title": "Settings 'Reset Settings' has no confirmation step",
+      "description": "Center on Reset Settings immediately wipes all settings to defaults with no confirmation overlay. iPod showed an Are You Sure? screen.",
+      "location": {
+        "file": "index.html",
+        "selector": "handleCycleSetting __reset__ branch"
+      },
+      "fix_suggestion": "On reset selection, push a confirmation submenu with 'Cancel' and 'Reset All Settings' rows; only commit on second SELECT."
+    },
+    {
+      "id": "MIN-004",
+      "severity": "minor",
+      "category": "visual_design",
+      "title": "Status play indicator is a 8px font-awesome-style glyph; lacks anti-alias smoothing at small size",
+      "description": "▶ at font-size: 8px renders blocky on non-Retina screens. Real iPod status bar uses a vector icon scaled crisply.",
+      "location": {
+        "file": "index.html",
+        "selector": ".status-play"
+      },
+      "fix_suggestion": "Replace text glyph with an inline 6x8 SVG triangle: <svg viewBox='0 0 6 8'><polygon points='0,0 6,4 0,8' fill='#1a6FFF'/></svg> for sharp rendering at all DPRs."
+    },
+    {
+      "id": "MIN-005",
+      "severity": "minor",
+      "category": "ux_navigation",
+      "title": "Center-button long-press fires context menu in any state, even MAIN_MENU where Browse Artist makes no sense",
+      "description": "_centerPressTimer at 600ms calls showContextMenu unconditionally. In MAIN_MENU with no current track, options are useless / no-op.",
+      "location": {
+        "file": "index.html",
+        "selector": "WheelEngine._bindCenter pointerdown"
+      },
+      "fix_suggestion": "Only arm the long-press timer when appState.state === NOW_PLAYING || (state === SUBMENU && appState._browseTracklist); ignore otherwise."
+    }
+  ],
+  "passing_areas": [
+    {
+      "area": "Wire-trace clean — all interactive elements resolve end-to-end from DOM ID through event handler to state mutation to visible effect.",
+      "detail": "Every getElementById call, addEventListener target, and class reference resolves; appState/audioEl/overlay* globals all declared before first read; rAF/setTimeout chains have explicit trigger sites; state→render path is uniform via ScreenRenderer.render()."
+    },
+    {
+      "area": "Brushed aluminum body with three-layer gradient achieves matte/satin look",
+      "detail": "Linear top-down + repeating-linear-gradient grain stripes + radial base ellipse at 40%/30% combined with multi-layer box-shadow (drop + inset top highlight + 1px rim) reads correctly as silver hardware, not chrome."
+    },
+    {
+      "area": "Click-wheel angular drag with setPointerCapture and 12° tick accumulation",
+      "detail": "WheelEngine uses Math.atan2, wraps -180/+180 deltas, accumulates _accDelta across moves, emits one TICK + tick sound per threshold crossing, and uses setPointerCapture so drag continues outside the wheel bounds — exactly the planner directive."
+    },
+    {
+      "area": "ID3v2.3/v2.4 parser handles syncsafe v2.4 sizes and all three text encodings inline",
+      "detail": "parseID3 reads ID3 magic, decodes 10-byte header with syncsafe tag size, branches frame-size decode by version (v2.4 syncsafe vs v2.3 BE), and supports encoding bytes 0 (ISO-8859-1), 1+2 (UTF-16 ±BOM), and 3 (UTF-8) — including the UTF-16 double-null APIC description termination."
+    },
+    {
+      "area": "Procedural Web Audio sounds use ctx.currentTime scheduling with pre-generated noise buffer",
+      "detail": "Noise buffer is generated once at AudioContext init; tick/buttonPress/confirm slice into a per-call source with proper highpass/lowpass biquads and exponential gain envelopes. Settings.clicker gates UI sounds; powerOn/powerOff use linearRampToValueAtTime on oscillator frequency."
+    }
+  ],
+  "iteration_comparison": {
+    "improved": [],
+    "regressed": [],
+    "unchanged": [
+      "First iteration — no prior baseline"
+    ]
+  },
+  "recommendation": {
+    "action": "accept",
+    "reason": "Total score 81/100 is above the 80 pass threshold AND wire-trace audit found no broken wires. However, two critical issues (CRIT-001 submenu list cap, CRIT-002 power-off re-boot) remain — Generator may wish to fix these in a follow-up patch before final assembly even though the rubric passes.",
+    "priority_fixes": [
+      "Fix CRIT-002: move long-press power-off into WheelEngine and skip sector dispatch when it fires, so POWER_OFF cleanly exits without immediate POWER_ON.",
+      "Fix CRIT-001: implement a scrolling window in renderSubmenu so the selected row is always visible when the list exceeds 8 items.",
+      "Fix MAJ-001: replace the wheel ::after brushed-aluminum gradient with a flat or subtly-shaded recess so the donut hole doesn't read as a punched-through case opening."
+    ],
+    "estimated_iterations_remaining": 1
+  }
+}

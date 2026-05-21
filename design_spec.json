@@ -1,0 +1,1369 @@
+{
+  "project_name": "Halcyon iPod Classic Webapp",
+  "iteration": 1,
+  "chosen_archetypes": {
+    "primary": "Data-Dense / Bloomberg",
+    "secondary": "Brutalist / Anti-Design",
+    "exemplar_anchors": [
+      "Bloomberg Terminal",
+      "BasicAppleGuy",
+      "Superhuman"
+    ],
+    "rationale": "The iPod Classic OS is itself a data-dense, information-first UI: monospaced-feeling pixel-precise rows, tabular scrubber times, keyboard-first interaction model, and zero decorative chrome. Data-Dense provides the density discipline and functional-color-only philosophy. Brutalist secondary archetype grounds the skeuomorphic hardware shell in authentic rawness — no gratuitous gradients beyond those demanded by physical material simulation, no ornamental SVG, no rounded-card defaults. Together they produce an interface that feels like a real instrument, not a website pretending to be one.",
+    "signature_interaction": "Click-wheel angular drag: pointer capture with atan2 accumulation emitting haptic-tick sounds every 12° of rotation — the single interaction that defines the whole product."
+  },
+  "design_system": {
+    "colors": {
+      "primary": {
+        "value": "#3A78D8",
+        "usage": "Menu selection highlight top, active states, scrubber fill"
+      },
+      "primary_gradient_end": {
+        "value": "#5A99F0",
+        "usage": "Menu selection highlight bottom gradient stop"
+      },
+      "primary_light": {
+        "value": "#EAF0FB",
+        "usage": "Subtle hover backgrounds inside screen"
+      },
+      "accent_orange": {
+        "value": "#FF6A00",
+        "usage": "Hold switch indicator, status-bar lock icon"
+      },
+      "body_silver_lit": {
+        "value": "#D6D8DA",
+        "usage": "Device body center — brushed aluminum base"
+      },
+      "body_silver_shadow": {
+        "value": "#C8CACE",
+        "usage": "Device body edge gradient"
+      },
+      "body_rim": {
+        "value": "#9A9CA0",
+        "usage": "Device rim border/shadow"
+      },
+      "screen_bezel": {
+        "value": "#1a1a1a",
+        "usage": "LCD bezel border, screen-off state"
+      },
+      "wheel_white": {
+        "value": "#F8F8F8",
+        "usage": "Click wheel outer ring surface"
+      },
+      "wheel_label_grey": {
+        "value": "#A0A0A4",
+        "usage": "MENU / icon labels on wheel"
+      },
+      "battery_green": {
+        "value": "#4CD964",
+        "usage": "Battery pill fill"
+      },
+      "status_bar_bg": {
+        "value": "#F0F0F0",
+        "usage": "Status bar background"
+      },
+      "screen_white": {
+        "value": "#FFFFFF",
+        "usage": "Left menu pane background"
+      },
+      "page_bg_center": {
+        "value": "#1a1a1f",
+        "usage": "Page radial gradient center"
+      },
+      "page_bg_edge": {
+        "value": "#0d0d10",
+        "usage": "Page radial gradient edge"
+      },
+      "neutral_900": {
+        "value": "#1a1a1a",
+        "usage": "Primary text, menu items"
+      },
+      "neutral_700": {
+        "value": "#555555",
+        "usage": "Artist name, secondary text"
+      },
+      "neutral_500": {
+        "value": "#777777",
+        "usage": "Album name, tertiary text"
+      },
+      "neutral_300": {
+        "value": "#CCCCCC",
+        "usage": "Empty rating stars, scrubber unfilled"
+      },
+      "neutral_200": {
+        "value": "#C0C0C0",
+        "usage": "Pane divider line, borders"
+      },
+      "top_edge": {
+        "value": "#B0B2B5",
+        "usage": "Top/bottom edge strips"
+      },
+      "success": {
+        "value": "#4CD964",
+        "usage": "Success states"
+      },
+      "warning": {
+        "value": "#FFB800",
+        "usage": "Rating stars filled"
+      },
+      "error": {
+        "value": "#FF3B30",
+        "usage": "Error states"
+      }
+    },
+    "typography": {
+      "font_heading": "Georgia, serif",
+      "font_body": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+      "font_mono": "'Courier New', Courier, monospace",
+      "note": "No web font imports — system fonts only. All screen sizes scaled via --ipod-font-scale CSS custom property.",
+      "scale": {
+        "boot_wordmark": {
+          "size": "22px",
+          "weight": "400",
+          "line_height": "1.2",
+          "font": "Georgia, serif"
+        },
+        "menu_item": {
+          "size": "13px",
+          "weight": "400",
+          "line_height": "1.0"
+        },
+        "track_title": {
+          "size": "12px",
+          "weight": "700",
+          "line_height": "1.2"
+        },
+        "artist_name": {
+          "size": "11px",
+          "weight": "400",
+          "line_height": "1.2"
+        },
+        "album_name": {
+          "size": "10px",
+          "weight": "400",
+          "line_height": "1.2"
+        },
+        "status_label": {
+          "size": "10px",
+          "weight": "700",
+          "line_height": "1.0"
+        },
+        "scrubber_time": {
+          "size": "10px",
+          "weight": "400",
+          "line_height": "1.0"
+        },
+        "wheel_label": {
+          "size": "10px",
+          "weight": "700",
+          "letter_spacing": "0.1em"
+        },
+        "quick_scroll_letter": {
+          "size": "60px",
+          "weight": "700",
+          "line_height": "1.0"
+        },
+        "submenu_breadcrumb": {
+          "size": "11px",
+          "weight": "700",
+          "line_height": "1.0"
+        }
+      }
+    },
+    "spacing": {
+      "unit": "8px",
+      "scale": "4px, 8px, 12px, 16px, 24px, 32px, 48px, 64px, 96px, 128px",
+      "screen_row_height": "15px",
+      "status_bar_height": "18px",
+      "menu_left_padding": "8px",
+      "screen_margin_from_body": "8px"
+    },
+    "borders": {
+      "radius_device": "14px",
+      "radius_screen_inner": "3px",
+      "radius_bezel": "5px",
+      "radius_wheel": "50%",
+      "radius_center_btn": "50%",
+      "radius_battery": "3px",
+      "radius_hold_switch": "3px",
+      "radius_dock_slot": "2px"
+    },
+    "shadows": {
+      "device_drop": "0 20px 60px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)",
+      "device_inset_top": "inset 0 1px 0 rgba(255,255,255,0.4)",
+      "screen_bezel_inset": "inset 0 1px 3px rgba(0,0,0,0.5)",
+      "center_btn_inset": "inset 0 1px 3px rgba(0,0,0,0.25)",
+      "wheel_gloss": "radial-gradient from rgba(255,255,255,0.7) top-left to transparent",
+      "dock_slot_inset": "inset 0 1px 3px rgba(0,0,0,0.6)"
+    },
+    "breakpoints": {
+      "mobile_portrait": "0-480px",
+      "mobile_landscape": "481-767px",
+      "tablet": "768-1023px",
+      "desktop": "1024px+"
+    },
+    "transitions": {
+      "instant": "60ms ease-out",
+      "fast": "150ms ease-out",
+      "normal": "250ms ease-out",
+      "screen_fade": "400ms ease",
+      "boot_fade_in": "600ms ease",
+      "boot_fade_out": "400ms ease",
+      "coverflow_slide": "300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+    },
+    "device_dimensions": {
+      "reference_height_px": 430,
+      "reference_width_px": 257,
+      "aspect_ratio": "1.674:1 (height:width)",
+      "scaling_formula": "min(calc(100vh - 80px), calc(100vw * 1.674))",
+      "css_custom_property": "--ipod-scale",
+      "mobile_width_target": "90vw"
+    }
+  },
+  "components": [
+    {
+      "component_id": "device_shell",
+      "type": "container",
+      "description": "Outer brushed aluminum iPod body",
+      "styles": {
+        "default": {
+          "aspect_ratio": "257 / 430",
+          "border_radius": "{borders.radius_device}",
+          "background": "layered: (1) radial-gradient(ellipse at 40% 30%, #D6D8DA 0%, #C8CACE 60%, #B8BABD 100%) — base aluminum; (2) repeating-linear-gradient(90deg, transparent 0px, rgba(255,255,255,0.015) 1px, transparent 2px) — grain stripes; (3) linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.06) 100%) — top-to-bottom lighting",
+          "box_shadow": "{shadows.device_drop}, {shadows.device_inset_top}, inset 0 0 0 1px rgba(154,156,160,0.6)",
+          "position": "relative",
+          "overflow": "hidden"
+        }
+      }
+    },
+    {
+      "component_id": "top_edge_strip",
+      "type": "container",
+      "description": "Top hardware edge with hold switch and headphone jack",
+      "styles": {
+        "default": {
+          "height": "8px",
+          "background": "{colors.top_edge}",
+          "border_radius": "{borders.radius_device} {borders.radius_device} 0 0",
+          "position": "absolute",
+          "top": "0",
+          "left": "0",
+          "right": "0"
+        }
+      }
+    },
+    {
+      "component_id": "hold_switch",
+      "type": "interactive",
+      "description": "Toggleable hold switch slider",
+      "variants": [
+        "default",
+        "engaged"
+      ],
+      "styles": {
+        "default": {
+          "width": "24px",
+          "height": "5px",
+          "background": "#999",
+          "border_radius": "{borders.radius_hold_switch}",
+          "position": "absolute",
+          "left": "12px",
+          "top": "1.5px",
+          "cursor": "pointer"
+        },
+        "engaged": {
+          "background": "{colors.accent_orange}",
+          "box_shadow": "0 0 4px rgba(255,106,0,0.5)"
+        }
+      }
+    },
+    {
+      "component_id": "headphone_jack",
+      "type": "decorative",
+      "description": "3.5mm headphone port visual",
+      "styles": {
+        "default": {
+          "width": "6px",
+          "height": "6px",
+          "border_radius": "50%",
+          "background": "#1a1a1a",
+          "border": "1px solid #555",
+          "box_shadow": "inset 0 1px 2px rgba(0,0,0,0.8)",
+          "position": "absolute",
+          "right": "16px",
+          "top": "1px"
+        }
+      }
+    },
+    {
+      "component_id": "screen_module",
+      "type": "container",
+      "description": "LCD screen with bezel",
+      "styles": {
+        "default": {
+          "position": "absolute",
+          "top": "20px",
+          "left": "8px",
+          "right": "8px",
+          "aspect_ratio": "3 / 2",
+          "background": "{colors.screen_bezel}",
+          "border": "3px solid {colors.screen_bezel}",
+          "border_radius": "{borders.radius_bezel}",
+          "box_shadow": "{shadows.screen_bezel_inset}",
+          "overflow": "hidden"
+        }
+      }
+    },
+    {
+      "component_id": "status_bar",
+      "type": "container",
+      "description": "Top status bar spanning full screen width",
+      "styles": {
+        "default": {
+          "height": "18px",
+          "background": "{colors.status_bar_bg}",
+          "display": "flex",
+          "align": "center",
+          "justify": "space-between",
+          "padding": "0 4px",
+          "border_bottom": "1px solid {colors.neutral_200}",
+          "flex_shrink": "0"
+        }
+      }
+    },
+    {
+      "component_id": "battery_pill",
+      "type": "decorative",
+      "description": "Green battery indicator in status bar",
+      "styles": {
+        "default": {
+          "width": "18px",
+          "height": "8px",
+          "background": "{colors.battery_green}",
+          "border_radius": "{borders.radius_battery}",
+          "border": "1px solid #2a9040",
+          "position": "relative",
+          "overflow": "hidden"
+        },
+        "inner_highlight": {
+          "content": "",
+          "position": "absolute",
+          "top": "1px",
+          "left": "2px",
+          "right": "4px",
+          "height": "2px",
+          "background": "rgba(255,255,255,0.5)",
+          "border_radius": "1px"
+        }
+      }
+    },
+    {
+      "component_id": "split_pane_container",
+      "type": "layout",
+      "description": "Two-pane screen layout below status bar",
+      "styles": {
+        "default": {
+          "display": "flex",
+          "flex": "1",
+          "overflow": "hidden"
+        }
+      }
+    },
+    {
+      "component_id": "left_menu_pane",
+      "type": "container",
+      "description": "55% left pane showing menu list",
+      "styles": {
+        "default": {
+          "width": "55%",
+          "background": "{colors.screen_white}",
+          "overflow": "hidden",
+          "border_right": "1px solid {colors.neutral_200}",
+          "display": "flex",
+          "flex_direction": "column"
+        }
+      }
+    },
+    {
+      "component_id": "right_art_pane",
+      "type": "container",
+      "description": "45% right pane showing album art",
+      "styles": {
+        "default": {
+          "width": "45%",
+          "overflow": "hidden",
+          "background": "#111",
+          "flex_shrink": "0"
+        }
+      }
+    },
+    {
+      "component_id": "menu_row",
+      "type": "list_item",
+      "description": "Single menu row item",
+      "variants": [
+        "default",
+        "selected"
+      ],
+      "styles": {
+        "default": {
+          "height": "15px",
+          "padding": "0 8px",
+          "font": "13px {typography.font_body}",
+          "color": "{colors.neutral_900}",
+          "display": "flex",
+          "align": "center",
+          "white_space": "nowrap",
+          "overflow": "hidden"
+        },
+        "selected": {
+          "background": "linear-gradient(180deg, {colors.primary} 0%, {colors.primary_gradient_end} 100%)",
+          "color": "#FFFFFF",
+          "position": "relative"
+        },
+        "selected_chevron": {
+          "content": "'>'",
+          "position": "absolute",
+          "right": "6px",
+          "font_size": "10px",
+          "color": "#FFFFFF"
+        }
+      }
+    },
+    {
+      "component_id": "click_wheel_outer",
+      "type": "interactive",
+      "description": "White glossy donut ring — outer click wheel",
+      "styles": {
+        "default": {
+          "position": "absolute",
+          "width": "80%",
+          "aspect_ratio": "1",
+          "border_radius": "50%",
+          "background": "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9) 0%, {colors.wheel_white} 50%, #EFEFEF 100%)",
+          "box_shadow": "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)",
+          "cursor": "default",
+          "user_select": "none",
+          "touch_action": "none"
+        },
+        "reflection_band": {
+          "position": "absolute",
+          "top": "30%",
+          "left": "5%",
+          "right": "5%",
+          "height": "2px",
+          "background": "rgba(255,255,255,0.4)",
+          "border_radius": "1px"
+        }
+      }
+    },
+    {
+      "component_id": "center_button",
+      "type": "interactive",
+      "description": "Plain white circle center button, no labels",
+      "styles": {
+        "default": {
+          "position": "absolute",
+          "width": "52%",
+          "aspect_ratio": "1",
+          "border_radius": "50%",
+          "background": "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.95) 0%, #FAFAFA 60%, #F0F0F0 100%)",
+          "box_shadow": "{shadows.center_btn_inset}",
+          "cursor": "pointer",
+          "z_index": 10
+        },
+        "active": {
+          "background": "#E8E8E8",
+          "box_shadow": "inset 0 2px 4px rgba(0,0,0,0.3)"
+        }
+      }
+    },
+    {
+      "component_id": "wheel_label",
+      "type": "text",
+      "description": "Cardinal direction labels on wheel ring",
+      "styles": {
+        "default": {
+          "position": "absolute",
+          "font_size": "10px",
+          "font_weight": "700",
+          "letter_spacing": "0.1em",
+          "color": "{colors.wheel_label_grey}",
+          "pointer_events": "none",
+          "user_select": "none"
+        }
+      }
+    },
+    {
+      "component_id": "bottom_edge_strip",
+      "type": "decorative",
+      "description": "Bottom edge with dock connector",
+      "styles": {
+        "default": {
+          "height": "8px",
+          "background": "{colors.top_edge}",
+          "position": "absolute",
+          "bottom": "0",
+          "left": "0",
+          "right": "0",
+          "border_radius": "0 0 {borders.radius_device} {borders.radius_device}",
+          "display": "flex",
+          "align": "center",
+          "justify": "center"
+        }
+      }
+    },
+    {
+      "component_id": "dock_connector_slot",
+      "type": "decorative",
+      "description": "Dock connector rectangular slot",
+      "styles": {
+        "default": {
+          "width": "60px",
+          "height": "4px",
+          "background": "#2a2a2a",
+          "border_radius": "{borders.radius_dock_slot}",
+          "box_shadow": "{shadows.dock_slot_inset}",
+          "background_image": "repeating-linear-gradient(90deg, transparent 0px, transparent 3px, rgba(255,255,255,0.08) 3px, rgba(255,255,255,0.08) 4px)"
+        }
+      }
+    },
+    {
+      "component_id": "scrubber_bar",
+      "type": "interactive",
+      "description": "Full-width playback scrubber at bottom of screen",
+      "styles": {
+        "default": {
+          "height": "16px",
+          "padding": "0 6px",
+          "display": "flex",
+          "align": "center",
+          "gap": "4px",
+          "background": "{colors.screen_white}",
+          "border_top": "1px solid {colors.neutral_200}",
+          "flex_shrink": "0"
+        },
+        "track": {
+          "flex": "1",
+          "height": "3px",
+          "background": "{colors.neutral_300}",
+          "border_radius": "2px",
+          "overflow": "hidden"
+        },
+        "fill": {
+          "height": "100%",
+          "background": "{colors.primary}",
+          "border_radius": "2px",
+          "transition": "width 250ms linear"
+        },
+        "time_label": {
+          "font_size": "10px",
+          "color": "{colors.neutral_500}",
+          "white_space": "nowrap",
+          "min_width": "28px"
+        }
+      }
+    },
+    {
+      "component_id": "overlay_backlight_dim",
+      "type": "overlay",
+      "description": "Semi-transparent dim overlay over screen on idle",
+      "styles": {
+        "default": {
+          "position": "absolute",
+          "inset": "0",
+          "background": "rgba(0,0,0,0.0)",
+          "z_index": 50,
+          "transition": "background {transitions.screen_fade}",
+          "pointer_events": "none"
+        },
+        "dimmed": {
+          "background": "rgba(0,0,0,0.7)",
+          "pointer_events": "all"
+        }
+      }
+    },
+    {
+      "component_id": "overlay_hold_status",
+      "type": "visual_indicator",
+      "description": "Orange lock icon replaces 'iPod' label in status bar when hold engaged"
+    },
+    {
+      "component_id": "overlay_quick_scroll",
+      "type": "overlay",
+      "description": "Large letter overlay on fast wheel spin",
+      "styles": {
+        "default": {
+          "position": "absolute",
+          "inset": "0",
+          "background": "rgba(0,0,0,0.8)",
+          "display": "flex",
+          "align": "center",
+          "justify": "center",
+          "z_index": 60,
+          "pointer_events": "none"
+        },
+        "letter": {
+          "font_size": "60px",
+          "font_weight": "700",
+          "color": "#FFFFFF",
+          "font_family": "{typography.font_body}"
+        }
+      }
+    },
+    {
+      "component_id": "overlay_context_menu",
+      "type": "overlay",
+      "description": "Context popover on 600ms center-button long press",
+      "styles": {
+        "default": {
+          "position": "absolute",
+          "inset": "0",
+          "background": "rgba(0,0,0,0.6)",
+          "display": "flex",
+          "align": "center",
+          "justify": "center",
+          "z_index": 70
+        },
+        "menu_box": {
+          "background": "#FFFFFF",
+          "border_radius": "4px",
+          "overflow": "hidden",
+          "width": "80%"
+        },
+        "menu_item": {
+          "padding": "6px 10px",
+          "font_size": "12px",
+          "border_bottom": "1px solid {colors.neutral_200}",
+          "cursor": "pointer"
+        }
+      }
+    },
+    {
+      "component_id": "overlay_keyboard_shortcuts",
+      "type": "overlay",
+      "description": "? key shortcuts reference overlay",
+      "styles": {
+        "default": {
+          "position": "absolute",
+          "inset": "0",
+          "background": "rgba(0,0,0,0.85)",
+          "z_index": 80,
+          "padding": "12px",
+          "overflow_y": "auto"
+        },
+        "title": {
+          "color": "#FFFFFF",
+          "font_size": "11px",
+          "font_weight": "700",
+          "margin_bottom": "8px"
+        },
+        "row": {
+          "display": "flex",
+          "justify": "space-between",
+          "color": "{colors.neutral_300}",
+          "font_size": "10px",
+          "padding": "2px 0"
+        }
+      }
+    },
+    {
+      "component_id": "drag_drop_overlay",
+      "type": "overlay",
+      "description": "File drop zone overlay on device body",
+      "styles": {
+        "default": {
+          "position": "absolute",
+          "inset": "0",
+          "background": "rgba(58,120,216,0.15)",
+          "border": "2px dashed {colors.primary}",
+          "border_radius": "{borders.radius_device}",
+          "display": "flex",
+          "align": "center",
+          "justify": "center",
+          "z_index": 100,
+          "pointer_events": "none"
+        },
+        "label": {
+          "color": "{colors.primary}",
+          "font_size": "12px",
+          "font_weight": "700",
+          "text_align": "center"
+        }
+      }
+    },
+    {
+      "component_id": "cover_flow_container",
+      "type": "container",
+      "description": "Full-screen 3D CSS carousel for Cover Flow view",
+      "styles": {
+        "default": {
+          "position": "absolute",
+          "inset": "0",
+          "background": "#000000",
+          "transform_style": "preserve-3d",
+          "perspective": "800px",
+          "overflow": "hidden"
+        }
+      }
+    },
+    {
+      "component_id": "cover_flow_card",
+      "type": "interactive",
+      "description": "Individual album card in Cover Flow",
+      "variants": [
+        "center",
+        "adjacent_left",
+        "adjacent_right",
+        "far_left",
+        "far_right"
+      ],
+      "styles": {
+        "center": {
+          "transform": "rotateY(0deg) scale(1.1)",
+          "z_index": 5,
+          "transition": "{transitions.coverflow_slide}"
+        },
+        "adjacent_left": {
+          "transform": "rotateY(45deg) translateX(-40%) scale(0.85)",
+          "z_index": 4
+        },
+        "adjacent_right": {
+          "transform": "rotateY(-45deg) translateX(40%) scale(0.85)",
+          "z_index": 4
+        },
+        "far_left": {
+          "transform": "rotateY(75deg) translateX(-70%) scale(0.7)",
+          "z_index": 3
+        },
+        "far_right": {
+          "transform": "rotateY(-75deg) translateX(70%) scale(0.7)",
+          "z_index": 3
+        }
+      }
+    },
+    {
+      "component_id": "rating_stars",
+      "type": "interactive",
+      "description": "5-star rating row in Now Playing",
+      "styles": {
+        "default": {
+          "font_size": "11px",
+          "cursor": "default"
+        },
+        "filled": {
+          "color": "{colors.warning}"
+        },
+        "empty": {
+          "color": "{colors.neutral_300}"
+        },
+        "active_mode": {
+          "cursor": "pointer"
+        }
+      }
+    },
+    {
+      "component_id": "mosaic_svg_art",
+      "type": "visual",
+      "description": "Procedural deterministic mosaic SVG default album art",
+      "generation_spec": {
+        "grid": "5x5 rectangles",
+        "rng": "LCG seeded by track.id or 0 for default",
+        "palette": [
+          "#FF4B8B",
+          "#8A2BE2",
+          "#FF6420",
+          "#FFB800",
+          "#3A78D8",
+          "#4CD964",
+          "#FF2D55",
+          "#AF52DE"
+        ],
+        "extras": "diagonal gradient overlays on ~30% of cells, subtle opacity variation",
+        "output": "inline SVG string or data: URL for background-image",
+        "no_solid_block": true
+      }
+    }
+  ],
+  "pages": [
+    {
+      "page_id": "ipod_shell",
+      "page_name": "iPod Device Shell (Single Page App)",
+      "file_name": "index.html",
+      "meta": {
+        "title": "Halcyon — iPod Classic",
+        "description": "A hyper-realistic iPod Classic 7th generation web replica"
+      },
+      "layout": {
+        "type": "fullscreen-centered",
+        "background": "radial-gradient(ellipse at center, {colors.page_bg_center} 0%, {colors.page_bg_edge} 100%)",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "min_height": "100vh",
+        "overflow": "hidden"
+      },
+      "sections": [
+        {
+          "section_id": "page_background",
+          "component": "none — body CSS",
+          "styles": {
+            "background": "radial-gradient(ellipse at center, #1a1a1f 0%, #0d0d10 100%)",
+            "min_height": "100vh",
+            "display": "flex",
+            "align": "center",
+            "justify": "center"
+          }
+        },
+        {
+          "section_id": "device_body",
+          "component": "device_shell",
+          "aria": {
+            "role": "application",
+            "aria_label": "Halcyon iPod Classic"
+          },
+          "responsive": {
+            "desktop": {
+              "height": "min(calc(100vh - 80px), calc(100vw * 1.674))",
+              "width": "auto",
+              "transform_origin": "center center"
+            },
+            "mobile_portrait": {
+              "width": "90vw",
+              "height": "auto"
+            }
+          },
+          "children": [
+            "top_edge_strip",
+            "screen_module",
+            "click_wheel_region",
+            "bottom_edge_strip",
+            "drag_drop_overlay (conditional)"
+          ]
+        },
+        {
+          "section_id": "top_edge",
+          "component": "top_edge_strip",
+          "children": [
+            {
+              "id": "hold_switch_el",
+              "component": "hold_switch",
+              "states": [
+                "default",
+                "engaged"
+              ],
+              "behavior": "click toggles holdState; engaged shows accent_orange background and reveals orange strip"
+            },
+            {
+              "id": "headphone_jack_el",
+              "component": "headphone_jack",
+              "interactive": false
+            }
+          ]
+        },
+        {
+          "section_id": "screen_module",
+          "component": "screen_module",
+          "children": [
+            {
+              "id": "screen_off",
+              "state": "OFF",
+              "background": "#000000",
+              "z_index": 1
+            },
+            {
+              "id": "screen_boot",
+              "state": "BOOTING",
+              "background": "#000000",
+              "z_index": 2,
+              "elements": [
+                {
+                  "type": "text",
+                  "content": "Halcyon",
+                  "style": "boot_wordmark — Georgia, serif, 22px, white, centered",
+                  "animation": "fadeIn 600ms → hold 800ms → fadeOut 400ms",
+                  "after": "transition to MAIN_MENU"
+                }
+              ]
+            },
+            {
+              "id": "screen_main_menu",
+              "state": "MAIN_MENU",
+              "z_index": 3,
+              "layout": "flex column, full height",
+              "children": [
+                {
+                  "id": "status_bar_el",
+                  "component": "status_bar",
+                  "elements": [
+                    {
+                      "id": "status_label",
+                      "content": "'iPod' or orange lock SVG when holdActive",
+                      "style": "status_label"
+                    },
+                    {
+                      "id": "status_play_indicator",
+                      "content": "▶ #1a6FFF 8px, visible only when playing"
+                    },
+                    {
+                      "id": "status_battery",
+                      "component": "battery_pill"
+                    }
+                  ]
+                },
+                {
+                  "id": "split_pane_el",
+                  "component": "split_pane_container",
+                  "children": [
+                    {
+                      "id": "left_pane_menu",
+                      "component": "left_menu_pane",
+                      "items": [
+                        "Music",
+                        "Videos",
+                        "Photos",
+                        "Podcasts",
+                        "Extras",
+                        "Settings",
+                        "Shuffle Songs",
+                        "Now Playing"
+                      ],
+                      "default_selected": 0,
+                      "row_component": "menu_row",
+                      "scroll_indicator": "small ▼ triangle at bottom if list overflows"
+                    },
+                    {
+                      "id": "right_pane_art",
+                      "component": "right_art_pane",
+                      "default": "mosaic_svg_art (procedural, seed=0)",
+                      "when_track_loaded": "APIC cover art blob URL, object-fit: cover"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "screen_submenu",
+              "state": "SUBMENU",
+              "z_index": 3,
+              "layout": "same split-pane as MAIN_MENU",
+              "elements": [
+                {
+                  "id": "breadcrumb",
+                  "type": "text",
+                  "style": "submenu_breadcrumb, 8px left padding, 12px top padding"
+                },
+                "status_bar_el (same component, reused)",
+                "left_pane_menu (dynamic items from library/config)",
+                "right_pane_art (contextual art or default mosaic)",
+                "scroll_indicator if >8 items"
+              ]
+            },
+            {
+              "id": "screen_now_playing",
+              "state": "NOW_PLAYING",
+              "z_index": 3,
+              "layout": "flex column",
+              "children": [
+                "status_bar_el (marquee track title when long)",
+                {
+                  "id": "np_split_pane",
+                  "component": "split_pane_container",
+                  "children": [
+                    {
+                      "id": "np_left",
+                      "component": "left_menu_pane",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "style": "track_title, bold 12px, truncate"
+                        },
+                        {
+                          "type": "text",
+                          "style": "artist_name, 11px neutral_700"
+                        },
+                        {
+                          "type": "text",
+                          "style": "album_name, 10px neutral_500"
+                        },
+                        {
+                          "component": "rating_stars",
+                          "mode_note": "tappable when centerButtonMode=rating"
+                        },
+                        {
+                          "type": "text",
+                          "content": "X of Y",
+                          "style": "10px neutral_500"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "np_right",
+                      "component": "right_art_pane",
+                      "content": "Current track APIC art or mosaic fallback"
+                    }
+                  ]
+                },
+                {
+                  "id": "np_scrubber",
+                  "component": "scrubber_bar",
+                  "behavior": "timeupdate drives fill width; draggable when centerButtonMode=scrubber"
+                }
+              ]
+            },
+            {
+              "id": "screen_settings",
+              "state": "SETTINGS",
+              "z_index": 3,
+              "layout": "split-pane",
+              "left_pane_items": [
+                {
+                  "label": "Clicker",
+                  "type": "toggle",
+                  "values": [
+                    "On",
+                    "Off"
+                  ]
+                },
+                {
+                  "label": "Backlight",
+                  "type": "cycle",
+                  "values": [
+                    "2s",
+                    "5s",
+                    "10s",
+                    "15s",
+                    "20s",
+                    "30s",
+                    "Always On"
+                  ]
+                },
+                {
+                  "label": "Brightness",
+                  "type": "cycle",
+                  "values": [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5"
+                  ]
+                },
+                {
+                  "label": "EQ",
+                  "type": "cycle",
+                  "values": [
+                    "Off",
+                    "Rock",
+                    "Pop",
+                    "Jazz",
+                    "Classical"
+                  ]
+                },
+                {
+                  "label": "Repeat",
+                  "type": "cycle",
+                  "values": [
+                    "Off",
+                    "One",
+                    "All"
+                  ]
+                },
+                {
+                  "label": "Shuffle",
+                  "type": "cycle",
+                  "values": [
+                    "Off",
+                    "Songs",
+                    "Albums"
+                  ]
+                },
+                {
+                  "label": "Reset Settings",
+                  "type": "action"
+                }
+              ],
+              "right_pane": "contextual icon/graphic (speaker for EQ, clock for backlight, plain mosaic otherwise)"
+            },
+            {
+              "id": "screen_cover_flow",
+              "state": "COVER_FLOW",
+              "z_index": 3,
+              "component": "cover_flow_container",
+              "card_component": "cover_flow_card",
+              "behavior": "wheel drag scrolls selected index; center press reveals track list sliding up from bottom"
+            },
+            {
+              "id": "overlay_backlight",
+              "component": "overlay_backlight_dim",
+              "z_index": 50,
+              "behavior": "dims after settings.backlightTimer ms idle; consumedByWake pattern on first input"
+            },
+            {
+              "id": "overlay_quick_scroll_el",
+              "component": "overlay_quick_scroll",
+              "z_index": 60,
+              "trigger": "angular velocity > threshold during wheel drag"
+            },
+            {
+              "id": "overlay_context_menu_el",
+              "component": "overlay_context_menu",
+              "z_index": 70,
+              "trigger": "600ms center button long press",
+              "items": [
+                "Browse Artist",
+                "Browse Album",
+                "Add to On-The-Go",
+                "Start Genius"
+              ],
+              "dismiss": "MENU button"
+            },
+            {
+              "id": "overlay_shortcuts_el",
+              "component": "overlay_keyboard_shortcuts",
+              "z_index": 80,
+              "trigger": "? key",
+              "dismiss": "Escape or ? key again"
+            }
+          ]
+        },
+        {
+          "section_id": "click_wheel_region",
+          "layout": {
+            "position": "absolute",
+            "bottom": "20px",
+            "left": "50%",
+            "transform": "translateX(-50%)",
+            "width": "80%",
+            "aspect_ratio": "1",
+            "display": "flex",
+            "align": "center",
+            "justify": "center"
+          },
+          "children": [
+            {
+              "id": "wheel_ring",
+              "component": "click_wheel_outer",
+              "aria_labels": {
+                "top_sector": "Menu",
+                "left_sector": "Previous",
+                "right_sector": "Next",
+                "bottom_sector": "Play Pause"
+              },
+              "children": [
+                {
+                  "component": "wheel_label",
+                  "position": "top",
+                  "content": "MENU"
+                },
+                {
+                  "component": "wheel_label",
+                  "position": "left",
+                  "content": "⏮ SVG"
+                },
+                {
+                  "component": "wheel_label",
+                  "position": "right",
+                  "content": "⏭ SVG"
+                },
+                {
+                  "component": "wheel_label",
+                  "position": "bottom",
+                  "content": "⏯ SVG"
+                }
+              ]
+            },
+            {
+              "id": "center_btn_el",
+              "component": "center_button",
+              "aria_label": "Select",
+              "behavior": "click = SELECT; 600ms long press = context menu; plays button_press sound"
+            }
+          ]
+        },
+        {
+          "section_id": "bottom_edge",
+          "component": "bottom_edge_strip",
+          "children": [
+            {
+              "component": "dock_connector_slot"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "js_architecture": {
+    "file_structure": "Single index.html, all CSS and JS inlined",
+    "js_sections": [
+      {
+        "id": 1,
+        "name": "Constants & Config",
+        "contents": "State enum, keyCodes, sector angles, timing constants, localStorage keys"
+      },
+      {
+        "id": 2,
+        "name": "AudioEngine",
+        "contents": "Lazy AudioContext init, pre-generated noise buffers, tick/button/confirm/powerOn/powerOff functions, iOS unlock"
+      },
+      {
+        "id": 3,
+        "name": "LibraryManager",
+        "contents": "IndexedDB open/migrate, addTrack, getTracks, deleteTrack, getBlobURL, demo-asset loader"
+      },
+      {
+        "id": 4,
+        "name": "ID3Parser",
+        "contents": "parseID3(arrayBuffer) → {title,artist,album,trackNum,coverBlob}; handles v2.3+v2.4, ISO-8859-1+UTF-16"
+      },
+      {
+        "id": 5,
+        "name": "StateManager",
+        "contents": "appState object, transition table, dispatch(action, payload), enterState handlers per state"
+      },
+      {
+        "id": 6,
+        "name": "WheelEngine",
+        "contents": "Class WheelEngine(element, center): pointerdown/move/up with setPointerCapture, atan2 accumulation, tick emission, sector tap, long-press timers"
+      },
+      {
+        "id": 7,
+        "name": "ScreenRenderer",
+        "contents": "render(state, appState) switch — shows/hides screen divs, updates menu rows, scrubber, art, status bar"
+      },
+      {
+        "id": 8,
+        "name": "BootSequence",
+        "contents": "runBoot(): plays powerOn sweep, drives Halcyon fade-in/hold/fade-out, transitions to MAIN_MENU"
+      },
+      {
+        "id": 9,
+        "name": "EventBindings",
+        "contents": "keyboard handler, drag-drop handler, hold switch click, resize/ResizeObserver for --ipod-scale, audio timeupdate/ended"
+      },
+      {
+        "id": 10,
+        "name": "Init",
+        "contents": "DOMContentLoaded: open DB, load library meta, calculate scale, render initial state, start boot if first load"
+      }
+    ],
+    "css_sections": [
+      "1. Reset & page background",
+      "2. Device shell & edges (layered gradients, shadows)",
+      "3. Screen module & bezel",
+      "4. Status bar",
+      "5. Split-pane layout",
+      "6. Menu rows & selection highlight gradient",
+      "7. Album art pane",
+      "8. Click wheel (donut ring) & center button",
+      "9. Now Playing layout",
+      "10. Overlays (hold status, backlight dim, quick-scroll, context menu, shortcuts, drag-drop)",
+      "11. Animations & transitions (boot fade, backlight, cover flow)",
+      "12. Responsive scaling (--ipod-scale custom property, transform: scale on device wrapper)"
+    ],
+    "state_machine": {
+      "states": [
+        "OFF",
+        "BOOTING",
+        "MAIN_MENU",
+        "SUBMENU",
+        "COVER_FLOW",
+        "NOW_PLAYING",
+        "SETTINGS"
+      ],
+      "transitions": {
+        "OFF→BOOTING": "any button/key press",
+        "BOOTING→MAIN_MENU": "after 1800ms boot animation",
+        "MAIN_MENU→SUBMENU": "SELECT on Music/Videos/Photos/Podcasts/Extras",
+        "MAIN_MENU→NOW_PLAYING": "SELECT on Now Playing, or auto when track starts",
+        "MAIN_MENU→SETTINGS": "SELECT on Settings",
+        "SUBMENU→SUBMENU": "SELECT to drill deeper",
+        "SUBMENU→COVER_FLOW": "SELECT on Cover Flow item",
+        "SUBMENU→NOW_PLAYING": "SELECT on a track",
+        "SUBMENU→MAIN_MENU": "MENU at depth 1",
+        "NOW_PLAYING→SUBMENU": "MENU button",
+        "any→hold_overlay": "hold switch toggle (state preserved)",
+        "any→OFF": "PLAY/PAUSE 1500ms long press"
+      }
+    },
+    "local_storage_keys": {
+      "halcyon-settings": "JSON: {clicker, backlightTimer, brightness, eq, repeat, shuffle}",
+      "halcyon-library-meta": "Array of {id, title, artist, album, trackNum, duration} without blobs",
+      "halcyon-playlists": "Array of {name, trackIds} including On-The-Go",
+      "halcyon-ratings": "Object: trackId → 0-5",
+      "halcyon-playcounts": "Object: trackId → number"
+    },
+    "indexeddb": {
+      "db_name": "halcyon-db",
+      "version": 1,
+      "stores": {
+        "tracks": "keyPath: id (auto-increment); fields: title, artist, album, trackNum, duration, audioBlob, coverBlob"
+      }
+    },
+    "backlight_system": {
+      "interval": "setInterval every 1000ms checks Date.now() - lastInteractionTime",
+      "dim_element": "overlay_backlight div",
+      "consumed_by_wake_flag": "_consumedByWake — set in pointerdown/keydown when dimmed, cleared after backlight-wake check in pointerup/keyup",
+      "wake_action": "set dim overlay opacity to 0, reset lastInteractionTime, set _consumedByWake=true, return early"
+    },
+    "mosaic_svg_spec": {
+      "function": "generateMosaicSVG(seed: number) → string (inline SVG)",
+      "rng": "LCG: next = (seed * 1664525 + 1013904223) & 0xFFFFFFFF",
+      "grid": "5x5 = 25 cells",
+      "palette": [
+        "#FF4B8B",
+        "#8A2BE2",
+        "#FF6420",
+        "#FFB800",
+        "#3A78D8",
+        "#4CD964",
+        "#FF2D55",
+        "#AF52DE"
+      ],
+      "extras": "~30% cells get a diagonal linearGradient overlay at 0.3 opacity; no solid-color fallback",
+      "output_use": "data:image/svg+xml URI for background-image OR innerHTML of right_art_pane"
+    }
+  },
+  "navigation_flow": {
+    "primary_input": "Click wheel (pointer events with setPointerCapture)",
+    "secondary_input": "Keyboard shortcuts",
+    "hold_guard": "All inputs check holdState first; if active, silent consume and return",
+    "backlight_guard": "All inputs check backlightDim; if dimmed, wake + _consumedByWake, return",
+    "keyboard_map": {
+      "ArrowUp": "scroll menu UP (wheel tick)",
+      "ArrowDown": "scroll menu DOWN (wheel tick)",
+      "Enter": "SELECT (center button)",
+      "Backspace": "MENU (navigate back)",
+      "Space": "PLAY/PAUSE toggle",
+      "ArrowLeft": "PREVIOUS track",
+      "ArrowRight": "NEXT track",
+      "?": "toggle shortcuts overlay",
+      "Escape": "dismiss overlays"
+    },
+    "page_transitions": "instantaneous state swap with 150ms opacity fade on screen content divs"
+  },
+  "accessibility": {
+    "color_contrast": "All screen text meets WCAG AA within the simulated screen; status bar text 4.5:1 on #F0F0F0",
+    "focus_indicators": "Visible focus ring on hold switch and center button; color: {colors.primary}",
+    "aria_landmarks": true,
+    "aria_current": "aria-current='true' on selected menu row",
+    "aria_labels": {
+      "device_shell": "Halcyon iPod Classic",
+      "center_button": "Select",
+      "wheel_sectors": "Menu, Previous, Next, Play Pause",
+      "hold_switch": "Hold switch"
+    },
+    "keyboard_navigation": true,
+    "skip_links": false,
+    "touch_targets": "Center button and hold switch ≥ 44x44px equivalent at reference scale",
+    "screen_reader_notes": "Screen states announced via aria-live region on state changes"
+  },
+  "performance_budget": {
+    "target_file_size": "<150KB for index.html (all CSS + JS inlined)",
+    "no_external_dependencies": true,
+    "no_cdns": true,
+    "no_google_fonts": true,
+    "audio_assets": "all UI sounds procedural via Web Audio API — zero external audio files",
+    "demo_assets": "optional external paths assets/music/track*.mp3 + assets/covers/cover*.jpg — graceful 404 handling"
+  }
+}
