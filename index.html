@@ -1191,14 +1191,21 @@ const AudioEngine = (() => {
 const LibraryManager = (() => {
   let db = null;
   const DB_NAME = 'halcyon-db';
-  const DB_VER  = 1;
+  const DB_VER  = 2;
 
   async function open() {
     return new Promise((res, rej) => {
       const req = indexedDB.open(DB_NAME, DB_VER);
       req.onupgradeneeded = e => {
         const d = e.target.result;
-        if (!d.objectStoreNames.contains('tracks')) {
+        if (e.oldVersion < 1) {
+          // Fresh install
+          const store = d.createObjectStore('tracks', { keyPath:'id', autoIncrement:true });
+          store.createIndex('artist','artist',{unique:false});
+          store.createIndex('album','album',{unique:false});
+        } else {
+          // v1 → v2: wipe partial/stale data so demo tracks reload cleanly
+          d.deleteObjectStore('tracks');
           const store = d.createObjectStore('tracks', { keyPath:'id', autoIncrement:true });
           store.createIndex('artist','artist',{unique:false});
           store.createIndex('album','album',{unique:false});
@@ -1409,7 +1416,8 @@ const appState = {
   playcounts: {},
   playlists: [],
   onTheGo: [],
-  _consumedByWake: false
+  _consumedByWake: false,
+  _demosLoading: false
 };
 
 function loadPersisted() {
@@ -1867,7 +1875,12 @@ function navigateSubmenuSelect() {
 
     if (item === 'Songs') {
       const tracks = [...appState.library];
-      if (!tracks.length) { showInfoScreen('Songs', 'No songs in library.\nDrag MP3s onto the page.'); return; }
+      if (!tracks.length) {
+        showInfoScreen('Songs', appState._demosLoading
+          ? 'Loading library…\nThis takes a few seconds on first visit.'
+          : 'No songs in library.\nDrag MP3s onto the page.');
+        return;
+      }
       pushMusic();
       appState.currentMenu = tracks.map(t => t.title || 'Unknown');
       appState._browseTracklist = tracks;
@@ -1876,7 +1889,12 @@ function navigateSubmenuSelect() {
     }
     if (item === 'Artists') {
       const artists = [...new Set(appState.library.map(t => t.artist || 'Unknown'))].sort();
-      if (!artists.length) { showInfoScreen('Artists', 'No artists yet.'); return; }
+      if (!artists.length) {
+        showInfoScreen('Artists', appState._demosLoading
+          ? 'Loading library…\nThis takes a few seconds on first visit.'
+          : 'No artists yet.');
+        return;
+      }
       pushMusic();
       appState.currentMenu = artists;
       appState._browseArtists = artists;
@@ -1886,7 +1904,12 @@ function navigateSubmenuSelect() {
     }
     if (item === 'Albums') {
       const albums = [...new Set(appState.library.map(t => t.album || 'Unknown'))].sort();
-      if (!albums.length) { showInfoScreen('Albums', 'No albums yet.'); return; }
+      if (!albums.length) {
+        showInfoScreen('Albums', appState._demosLoading
+          ? 'Loading library…\nThis takes a few seconds on first visit.'
+          : 'No albums yet.');
+        return;
+      }
       pushMusic();
       appState.currentMenu = albums;
       appState._browseAlbums = albums;
@@ -3057,17 +3080,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   recalcScale();
   loadPersisted();
 
-  // Open DB — load tracks immediately, fetch demo assets in background
+  // Open DB — boot immediately, fetch demo assets in background if needed
   try {
     await LibraryManager.open();
-    const tracks = await LibraryManager.getAllTracks();
-    appState.library = tracks;
-    if (tracks.length === 0) {
-      // Background fetch — don't block boot animation
+    const count = await LibraryManager.getCount();
+    appState.library = count > 0 ? await LibraryManager.getAllTracks() : [];
+    if (count === 0) {
+      appState._demosLoading = true;
       LibraryManager.loadDemoAssets().then(async () => {
+        appState._demosLoading = false;
         appState.library = await LibraryManager.getAllTracks();
+        // Auto-dismiss the "Loading library…" info screen if it's showing
+        if (appState._infoOpen) hideInfoScreen();
         ScreenRenderer.render();
-      }).catch(() => {});
+      }).catch(() => { appState._demosLoading = false; });
     }
   } catch(e) {
     console.warn('DB init error:', e);
