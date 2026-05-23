@@ -1222,8 +1222,11 @@ const LibraryManager = (() => {
     return new Promise((res, rej) => {
       const tx = db.transaction('tracks','readonly');
       const req = tx.objectStore('tracks').getAll();
-      req.onsuccess = e => res(e.target.result);
-      req.onerror   = e => rej(e.target.error);
+      req.onsuccess = e => res(e.target.result.map(t => ({
+        id: t.id, title: t.title, artist: t.artist, album: t.album,
+        trackNum: t.trackNum, duration: t.duration, coverBlob: t.coverBlob
+      })));
+      req.onerror = e => rej(e.target.error);
     });
   }
 
@@ -1266,35 +1269,17 @@ const LibraryManager = (() => {
       { path:'assets/music/track3.mp3', title:'朋友',       artist:'周华健',          album:'',       trackNum:3 },
       { path:'assets/music/track4.mp3', title:'鬼迷心窍',   artist:'Beyond',          album:'',       trackNum:4 }
     ];
-    for (const demo of demos) {
+    await Promise.all(demos.map(async (demo) => {
       try {
         const audioResp = await fetch(demo.path);
-        if (!audioResp.ok) continue;
-        const buf = await audioResp.arrayBuffer();
-        const tags = parseID3(buf);
-        const audioBlob = new Blob([buf], { type: 'audio/mpeg' });
-        let duration = 0;
-        try {
-          const tempURL = URL.createObjectURL(audioBlob);
-          duration = await new Promise(res => {
-            const a = new Audio();
-            a.src = tempURL;
-            a.onloadedmetadata = () => { res(a.duration); URL.revokeObjectURL(tempURL); };
-            a.onerror = () => { res(0); URL.revokeObjectURL(tempURL); };
-            setTimeout(() => res(0), 3000);
-          });
-        } catch(e) {}
+        if (!audioResp.ok) return;
+        const audioBlob = await audioResp.blob();
         await addTrack({
-          title:    tags.title    || demo.title,
-          artist:   tags.artist   || demo.artist,
-          album:    tags.album    || demo.album,
-          trackNum: tags.trackNum || demo.trackNum,
-          duration,
-          audioBlob,
-          coverBlob: tags.coverBlob || null
+          title: demo.title, artist: demo.artist, album: demo.album,
+          trackNum: demo.trackNum, duration: 0, audioBlob, coverBlob: null
         });
       } catch(e) { /* skip */ }
-    }
+    }));
   }
 
   return { open, addTrack, getAllTracks, getTrack, deleteTrack, getCount, getBlobURL, loadDemoAssets };
@@ -3072,22 +3057,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   recalcScale();
   loadPersisted();
 
-  // Open DB
+  // Open DB — load tracks immediately, fetch demo assets in background
   try {
     await LibraryManager.open();
-    const count = await LibraryManager.getCount();
-    if (count === 0) {
-      // Try demo assets
-      await LibraryManager.loadDemoAssets();
-    }
-    // Load library into memory
     const tracks = await LibraryManager.getAllTracks();
-    // Store without blobs for menu browsing (blobs loaded on demand)
-    appState.library = tracks.map(t => ({
-      id: t.id, title: t.title, artist: t.artist, album: t.album,
-      trackNum: t.trackNum, duration: t.duration,
-      coverBlob: t.coverBlob // keep coverBlob for art display
-    }));
+    appState.library = tracks;
+    if (tracks.length === 0) {
+      // Background fetch — don't block boot animation
+      LibraryManager.loadDemoAssets().then(async () => {
+        appState.library = await LibraryManager.getAllTracks();
+        ScreenRenderer.render();
+      }).catch(() => {});
+    }
   } catch(e) {
     console.warn('DB init error:', e);
     appState.library = [];
