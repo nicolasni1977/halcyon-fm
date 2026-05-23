@@ -1022,7 +1022,7 @@ html, body {
   inset: -24px;           /* extend past edges so the blur halo never reveals seams */
   background-size: cover;
   background-position: center;
-  filter: blur(28px) brightness(0.6) saturate(1.15);
+  filter: blur(28px) saturate(1.5);
   transform: scale(1.12);
   z-index: 0;
   pointer-events: none;
@@ -1031,7 +1031,7 @@ html, body {
   position: absolute;
   inset: 0;
   width: 100%; height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   display: block;
   z-index: 1;
 }
@@ -1123,6 +1123,85 @@ html, body {
   border: 0; display: block;
   background: #000;
 }
+#video-player-yt-link {
+  position: absolute;
+  top: 8px; right: 8px;
+  z-index: 10;
+  background: rgba(229, 9, 20, 0.93);  /* YouTube red */
+  color: #fff;
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  pointer-events: auto;
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ---- Podcast browser / player ---- */
+#screen-podcast-browser { flex-direction: column; background: #0a0a0a; }
+#podcast-browser-list {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  background: #0a0a0a;
+}
+#podcast-loading {
+  color: rgba(255,255,255,0.55); text-align: center;
+  padding: 20px; font-size: 11px;
+}
+.podcast-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #1c1c1c;
+  cursor: pointer; color: #fff;
+}
+.podcast-row.selected {
+  background: linear-gradient(180deg, #3A78D8 0%, #5A99F0 100%);
+  box-shadow: inset 4px 0 0 #fff;
+}
+.podcast-art { width: 38px; height: 38px; flex-shrink: 0; border-radius: 4px; object-fit: cover; background: #222; }
+.podcast-meta { flex: 1; min-width: 0; }
+.podcast-title { font-size: 11px; font-weight: 600; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.podcast-show  { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.podcast-row.selected .podcast-show { color: rgba(255,255,255,0.88); }
+.podcast-row.selected::after { content: '\203A'; margin-left: auto; padding-right: 6px; font-size: 16px; color: #fff; font-weight: 700; line-height: 1; }
+
+#screen-podcast-player { background: #000; }
+#podcast-player-bg {
+  position: absolute; inset: -24px;
+  background-size: cover; background-position: center;
+  filter: blur(28px) saturate(1.5);
+  transform: scale(1.12); z-index: 0; pointer-events: none;
+}
+#podcast-player-art {
+  position: absolute;
+  top: 18px; left: 50%;
+  transform: translateX(-50%);
+  width: 84px; height: 84px;
+  border-radius: 8px; object-fit: cover;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.6);
+  z-index: 1; background: #222;
+}
+#podcast-player-info {
+  position: absolute;
+  bottom: 38px; left: 8px; right: 8px;
+  z-index: 1; text-align: center;
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+}
+#podcast-player-title { font-size: 12px; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+#podcast-player-show  { font-size: 10px; color: rgba(255,255,255,0.78); margin-top: 4px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#podcast-player-controls {
+  position: absolute;
+  bottom: 4px; left: 8px; right: 8px;
+  z-index: 1;
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'SF Mono','Menlo',monospace; font-size: 9px; color: rgba(255,255,255,0.85);
+}
+#podcast-player-track { flex: 1; height: 3px; background: rgba(255,255,255,0.22); border-radius: 2px; overflow: hidden; }
+#podcast-player-fill { width: 0%; height: 100%; background: #fff; transition: width 200ms linear; }
 
 /* Magical zoom overlay — animates between thumbnail and full-screen photo view */
 #photo-zoom-overlay {
@@ -1337,6 +1416,34 @@ html, body {
                   referrerpolicy="strict-origin"
                   allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                   allowfullscreen></iframe>
+          <a id="video-player-yt-link" target="_blank" rel="noopener" href="https://www.youtube.com/">Open on YouTube &#8599;</a>
+        </div>
+
+        <!-- PODCAST BROWSER state -->
+        <div id="screen-podcast-browser" class="screen-state">
+          <div class="status-bar">
+            <span class="status-label" id="pb-podcast-title">AI Daily</span>
+            <span class="status-play">&#9654;</span>
+            <div class="battery-pill"></div>
+          </div>
+          <div id="podcast-browser-list">
+            <div id="podcast-loading">Loading&hellip;</div>
+          </div>
+        </div>
+
+        <!-- PODCAST PLAYER state -->
+        <div id="screen-podcast-player" class="screen-state">
+          <div id="podcast-player-bg"></div>
+          <img id="podcast-player-art" alt="">
+          <div id="podcast-player-info">
+            <div id="podcast-player-title"></div>
+            <div id="podcast-player-show"></div>
+          </div>
+          <div id="podcast-player-controls">
+            <span id="podcast-player-elapsed">0:00</span>
+            <div id="podcast-player-track"><div id="podcast-player-fill"></div></div>
+            <span id="podcast-player-remaining">-0:00</span>
+          </div>
         </div>
 
         <!-- Overlays (inside screen-inner) -->
@@ -1429,7 +1536,9 @@ const STATES = {
   PHOTO_VIEW: 'PHOTO_VIEW',
   STOPWATCH: 'STOPWATCH',
   VIDEO_BROWSER: 'VIDEO_BROWSER',
-  VIDEO_PLAYER:  'VIDEO_PLAYER'
+  VIDEO_PLAYER:  'VIDEO_PLAYER',
+  PODCAST_BROWSER: 'PODCAST_BROWSER',
+  PODCAST_PLAYER:  'PODCAST_PLAYER'
 };
 
 const LS_KEYS = {
@@ -1478,7 +1587,7 @@ const VIDEOS_FEED = [
   { id:'eMlx5fFNoYc', title:'Attention in transformers, visually explained',        channel:'3Blue1Brown' }
 ];
 const PHOTOS_SUBMENU   = ['All Photos','Photo Library','Slideshow Settings'];
-const PODCASTS_SUBMENU = ['All Podcasts'];
+const PODCASTS_SUBMENU = ['AI Daily (EN)', 'AI Daily (中文)', 'All Podcasts'];
 
 const SETTINGS_ITEMS = [
   { label:'About',         key:'__about__',     values:[] },
@@ -1607,7 +1716,29 @@ const DEMO_LIBRARY = [
   { id:9307, title:'我真的受伤了',     artist:'张学友', album:'张学友精选', trackNum:7,  duration:0, coverBlob:null, coverUrl:'assets/cover/7. 我真的受伤了.jpg',     demoUrl:'assets/music/7. 我真的受伤了.mp3',     lyricsUrl:'assets/lyrics/7. 我真的受伤了.lrc' },
   { id:9308, title:'李香兰',           artist:'张学友', album:'张学友精选', trackNum:8,  duration:0, coverBlob:null, coverUrl:'assets/cover/8. 李香兰.jpg',           demoUrl:'assets/music/8. 李香兰.mp3',           lyricsUrl:'assets/lyrics/8. 李香兰.lrc' },
   { id:9309, title:'饿狼传说',         artist:'张学友', album:'张学友精选', trackNum:9,  duration:0, coverBlob:null, coverUrl:'assets/cover/9. 饿狼传说.jpg',         demoUrl:'assets/music/9. 饿狼传说.mp3',         lyricsUrl:'assets/lyrics/9. 饿狼传说.lrc' },
-  { id:9310, title:'头发乱了',         artist:'张学友', album:'张学友精选', trackNum:10, duration:0, coverBlob:null, coverUrl:'assets/cover/10. 头发乱了.jpg',         demoUrl:'assets/music/10. 头发乱了.mp3',         lyricsUrl:'assets/lyrics/10. 头发乱了.lrc' }
+  { id:9310, title:'头发乱了',         artist:'张学友', album:'张学友精选', trackNum:10, duration:0, coverBlob:null, coverUrl:'assets/cover/10. 头发乱了.jpg',         demoUrl:'assets/music/10. 头发乱了.mp3',         lyricsUrl:'assets/lyrics/10. 头发乱了.lrc' },
+  // 张国荣精选 (Leslie Cheung compilation)
+  { id:9401, title:'Monica',     artist:'张国荣', album:'张国荣精选', trackNum:1,  duration:0, coverBlob:null, coverUrl:'assets/cover/1. Monica.jpg',     demoUrl:'assets/music/1. Monica.mp3',     lyricsUrl:'assets/lyrics/1. Monica.lrc' },
+  { id:9402, title:'风继续吹',   artist:'张国荣', album:'张国荣精选', trackNum:2,  duration:0, coverBlob:null, coverUrl:'assets/cover/2. 风继续吹.jpg',   demoUrl:'assets/music/2. 风继续吹.mp3' },
+  { id:9403, title:'风再起时',   artist:'张国荣', album:'张国荣精选', trackNum:3,  duration:0, coverBlob:null, coverUrl:'assets/cover/3. 风再起时.jpg',   demoUrl:'assets/music/3. 风再起时.mp3',   lyricsUrl:'assets/lyrics/3. 风再起时.lrc' },
+  { id:9404, title:'倩女幽魂',   artist:'张国荣', album:'张国荣精选', trackNum:4,  duration:0, coverBlob:null, coverUrl:'assets/cover/4. 倩女幽魂.jpg',   demoUrl:'assets/music/4. 倩女幽魂.mp3',   lyricsUrl:'assets/lyrics/4. 倩女幽魂.lrc' },
+  { id:9405, title:'当年情',     artist:'张国荣', album:'张国荣精选', trackNum:5,  duration:0, coverBlob:null, coverUrl:'assets/cover/5. 当年情.jpg',     demoUrl:'assets/music/5. 当年情.mp3',     lyricsUrl:'assets/lyrics/5. 当年情.lrc' },
+  { id:9406, title:'沉默是金',   artist:'张国荣', album:'张国荣精选', trackNum:6,  duration:0, coverBlob:null, coverUrl:'assets/cover/6. 沉默是金.jpg',   demoUrl:'assets/music/6. 沉默是金.mp3',   lyricsUrl:'assets/lyrics/6. 沉默是金.lrc' },
+  { id:9407, title:'共同度过',   artist:'张国荣', album:'张国荣精选', trackNum:7,  duration:0, coverBlob:null, coverUrl:'assets/cover/7. 共同度过.jpg',   demoUrl:'assets/music/7. 共同度过.mp3',   lyricsUrl:'assets/lyrics/7. 共同度过.lrc' },
+  { id:9408, title:'有谁共鸣',   artist:'张国荣', album:'张国荣精选', trackNum:8,  duration:0, coverBlob:null, coverUrl:'assets/cover/8. 有谁共鸣.jpg',   demoUrl:'assets/music/8. 有谁共鸣.mp3',   lyricsUrl:'assets/lyrics/8. 有谁共鸣.lrc' },
+  { id:9409, title:'我',         artist:'张国荣', album:'张国荣精选', trackNum:9,  duration:0, coverBlob:null, coverUrl:'assets/cover/9. 我.jpg',         demoUrl:'assets/music/9. 我.mp3',         lyricsUrl:'assets/lyrics/9. 我.lrc' },
+  { id:9410, title:'春夏秋冬',   artist:'张国荣', album:'张国荣精选', trackNum:10, duration:0, coverBlob:null, coverUrl:'assets/cover/10. 春夏秋冬.jpg',   demoUrl:'assets/music/10. 春夏秋冬.mp3',   lyricsUrl:'assets/lyrics/10. 春夏秋冬.lrc' },
+  // 陈百强精选 (Danny Chan compilation)
+  { id:9501, title:'偏偏喜欢你', artist:'陈百强', album:'陈百强精选', trackNum:1,  duration:0, coverBlob:null, coverUrl:'assets/cover/1. 偏偏喜欢你.jpg', demoUrl:'assets/music/1. 偏偏喜欢你.mp3', lyricsUrl:'assets/lyrics/1. 偏偏喜欢你.lrc' },
+  { id:9502, title:'一生何求',   artist:'陈百强', album:'陈百强精选', trackNum:2,  duration:0, coverBlob:null, coverUrl:'assets/cover/2. 一生何求.jpg',   demoUrl:'assets/music/2. 一生何求.mp3',   lyricsUrl:'assets/lyrics/2. 一生何求.lrc' },
+  { id:9503, title:'念亲恩',     artist:'陈百强', album:'陈百强精选', trackNum:3,  duration:0, coverBlob:null, coverUrl:'assets/cover/3. 念亲恩.jpg',     demoUrl:'assets/music/3. 念亲恩.mp3',     lyricsUrl:'assets/lyrics/3. 念亲恩.lrc' },
+  { id:9504, title:'涟漪',       artist:'陈百强', album:'陈百强精选', trackNum:4,  duration:0, coverBlob:null, coverUrl:'assets/cover/4. 涟漪.jpg',       demoUrl:'assets/music/4. 涟漪.mp3',       lyricsUrl:'assets/lyrics/4. 涟漪.lrc' },
+  { id:9505, title:'喝采',       artist:'陈百强', album:'陈百强精选', trackNum:5,  duration:0, coverBlob:null, coverUrl:'assets/cover/5. 喝采.jpg',       demoUrl:'assets/music/5. 喝采.mp3',       lyricsUrl:'assets/lyrics/5. 喝采.lrc' },
+  { id:9506, title:'眼泪为你流', artist:'陈百强', album:'陈百强精选', trackNum:6,  duration:0, coverBlob:null, coverUrl:'assets/cover/6. 眼泪为你流.jpg', demoUrl:'assets/music/6. 眼泪为你流.mp3', lyricsUrl:'assets/lyrics/6. 眼泪为你流.lrc' },
+  { id:9507, title:'今宵多珍重', artist:'陈百强', album:'陈百强精选', trackNum:7,  duration:0, coverBlob:null, coverUrl:'assets/cover/7. 今宵多珍重.jpg', demoUrl:'assets/music/7. 今宵多珍重.mp3', lyricsUrl:'assets/lyrics/7. 今宵多珍重.lrc' },
+  { id:9508, title:'我的故事',   artist:'陈百强', album:'陈百强精选', trackNum:8,  duration:0, coverBlob:null, coverUrl:'assets/cover/8. 我的故事.jpg',   demoUrl:'assets/music/8. 我的故事.mp3',   lyricsUrl:'assets/lyrics/8. 我的故事.lrc' },
+  { id:9509, title:'摘星',       artist:'陈百强', album:'陈百强精选', trackNum:9,  duration:0, coverBlob:null, coverUrl:'assets/cover/9. 摘星.jpg',       demoUrl:'assets/music/9. 摘星.mp3',       lyricsUrl:'assets/lyrics/9. 摘星.lrc' },
+  { id:9510, title:'等',         artist:'陈百强', album:'陈百强精选', trackNum:10, duration:0, coverBlob:null, coverUrl:'assets/cover/10. 等.jpg',         demoUrl:'assets/music/10. 等.mp3',         lyricsUrl:'assets/lyrics/10. 等.lrc' }
 ];
 
 // ============================================================
@@ -1977,7 +2108,11 @@ const appState = {
   playlists: [],
   onTheGo: [],
   _consumedByWake: false,
-  _demosLoading: false
+  _demosLoading: false,
+  _podcastEpisodes: [],
+  _podcastBrowserIdx: 0,
+  _podcastFeedKey: 'en',
+  _currentPodcast: null
 };
 
 function loadPersisted() {
@@ -2266,6 +2401,22 @@ function handleSelect(payload) {
     ScreenRenderer.render();
     return;
   }
+  if (appState.state === STATES.PODCAST_BROWSER) {
+    const ep = (appState._podcastEpisodes || [])[appState._podcastBrowserIdx || 0];
+    if (!ep) return;
+    appState.menuStack.push({
+      items: [], selectedIndex: appState._podcastBrowserIdx || 0,
+      breadcrumb: 'AI Daily'
+    });
+    appState.state = STATES.PODCAST_PLAYER;
+    startPodcast(ep);
+    ScreenRenderer.render();
+    return;
+  }
+  if (appState.state === STATES.PODCAST_PLAYER) {
+    // Tap center on player: no-op (use Play/Pause to toggle, Menu to go back)
+    return;
+  }
   if (appState.state === STATES.VIDEO_PLAYER) {
     // Tap center while watching: do nothing (iframe handles its own play/pause)
     return;
@@ -2407,6 +2558,25 @@ function handleMenu() {
     return;
   }
 
+  if (appState.state === STATES.PODCAST_PLAYER) {
+    audioEl.pause();
+    appState.menuStack.pop();
+    appState.state = STATES.PODCAST_BROWSER;
+    ScreenRenderer.render();
+    return;
+  }
+  if (appState.state === STATES.PODCAST_BROWSER) {
+    const prev = appState.menuStack.pop();
+    if (prev) {
+      appState.currentMenu = prev.items;
+      appState.selectedIndex = prev.selectedIndex;
+    }
+    appState.state = STATES.SUBMENU;
+    appState._submenuOwner = 'Podcasts';
+    ScreenRenderer.render();
+    return;
+  }
+
   if (appState.state === STATES.SUBMENU) {
     // Clear lingering browse flags before unwinding so the previous level dispatches correctly.
     appState._browseTracklist = null;
@@ -2475,6 +2645,11 @@ function handlePlayPause() {
   if (appState.state === STATES.STOPWATCH) {
     if (appState.stopwatch.running) stopwatchPause();
     else stopwatchStart();
+    return;
+  }
+  if (appState.state === STATES.PODCAST_PLAYER) {
+    if (audioEl.paused) audioEl.play().catch(()=>{});
+    else audioEl.pause();
     return;
   }
   if (audioEl.paused) {
@@ -2551,6 +2726,15 @@ function handleScroll(dir) {
     appState._videoBrowserIdx = Math.max(0, Math.min(total - 1, cur + dir));
     ScreenRenderer.render();
     AudioEngine.tick();
+    return;
+  } else if (appState.state === STATES.PODCAST_BROWSER) {
+    const total = (appState._podcastEpisodes || []).length;
+    if (total) {
+      const cur = appState._podcastBrowserIdx || 0;
+      appState._podcastBrowserIdx = Math.max(0, Math.min(total - 1, cur + dir));
+      ScreenRenderer.render();
+      AudioEngine.tick();
+    }
     return;
   } else return;
 
@@ -2936,9 +3120,30 @@ function navigateSubmenuSelect() {
     showInfoScreen(item, 'No ' + item.toLowerCase() + ' synced.\nThis is a music-first build.');
     return;
   }
-  // ============== PODCASTS stub ==============
+  // ============== PODCASTS submenu ==============
   if (appState.state === STATES.SUBMENU && appState._submenuOwner === 'Podcasts') {
-    showInfoScreen(item, 'No ' + item.toLowerCase() + ' synced.\nThis is a music-first build.');
+    if (item === 'AI Daily (EN)' || item === 'AI Daily (中文)') {
+      appState.menuStack.push({
+        items: appState.currentMenu, selectedIndex: appState.selectedIndex,
+        breadcrumb: 'Podcasts', parentOwner: 'Podcasts'
+      });
+      appState.state = STATES.PODCAST_BROWSER;
+      appState._podcastFeedKey = (item === 'AI Daily (中文)') ? 'cn' : 'en';
+      appState._podcastBrowserIdx = 0;
+      appState._podcastEpisodes = [];
+      appState.selectedIndex = 0;
+      ScreenRenderer.render();
+      const feedKey = appState._podcastFeedKey;
+      fetchPodcastEpisodes(feedKey).then(eps => {
+        if (appState.state === STATES.PODCAST_BROWSER && appState._podcastFeedKey === feedKey) {
+          appState._podcastEpisodes = eps;
+          if (appState._podcastBrowserIdx >= eps.length) appState._podcastBrowserIdx = 0;
+          ScreenRenderer.render();
+        }
+      });
+      return;
+    }
+    showInfoScreen(item, 'No ' + item.toLowerCase() + ' synced.\nUse "AI Daily" entries for live podcasts.');
     return;
   }
 
@@ -3166,6 +3371,71 @@ function loadLyricsFromUrl(url) {
     .catch(() => null);
   _lrcCache.set(url, p);
   return p;
+}
+
+// Apple iTunes Search API — free, public, CORS-enabled, no key.
+// Returns recent episodes for a query; we cache for 6 hours to be polite.
+const PODCAST_QUERIES = {
+  en: 'AI artificial intelligence',
+  cn: '人工智能'
+};
+const _PODCAST_CACHE_KEY = 'halcyon-podcast-cache-v1';
+const _PODCAST_TTL_MS = 6 * 60 * 60 * 1000;
+
+function _readPodcastCache() {
+  try {
+    const raw = localStorage.getItem(_PODCAST_CACHE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) || {};
+  } catch (e) { return {}; }
+}
+function _writePodcastCache(obj) {
+  try { localStorage.setItem(_PODCAST_CACHE_KEY, JSON.stringify(obj)); } catch (e) {}
+}
+
+function startPodcast(ep) {
+  appState._currentPodcast = ep;
+  appState.currentTrack = null; // not a music track — keep music-related state quiet
+  audioEl.src = ep.audio;
+  audioEl.play().catch(() => {});
+}
+
+async function fetchPodcastEpisodes(feedKey) {
+  const cache = _readPodcastCache();
+  const entry = cache[feedKey];
+  const now = Date.now();
+  if (entry && (now - entry.ts) < _PODCAST_TTL_MS && entry.episodes && entry.episodes.length) {
+    return entry.episodes;
+  }
+  const q = PODCAST_QUERIES[feedKey] || PODCAST_QUERIES.en;
+  const country = (feedKey === 'cn') ? 'cn' : 'us';
+  const url = 'https://itunes.apple.com/search?term=' + encodeURIComponent(q)
+            + '&entity=podcastEpisode&limit=20&country=' + country;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('http ' + r.status);
+    const data = await r.json();
+    // Keep only entries with a playable audio URL; sort by release date desc.
+    const episodes = (data.results || [])
+      .filter(e => e.episodeUrl || e.previewUrl)
+      .map(e => ({
+        title: e.trackName || '(untitled)',
+        show:  e.collectionName || '',
+        audio: e.episodeUrl || e.previewUrl,
+        artwork: e.artworkUrl600 || e.artworkUrl160 || e.artworkUrl100 || '',
+        ms: e.trackTimeMillis || 0,
+        date: e.releaseDate || ''
+      }))
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+      .slice(0, 12);
+    cache[feedKey] = { ts: now, episodes };
+    _writePodcastCache(cache);
+    return episodes;
+  } catch (e) {
+    // On failure, fall back to cached entry even if stale, else empty list.
+    if (entry && entry.episodes) return entry.episodes;
+    return [];
+  }
 }
 
 let _lyricsRenderToken = 0;
@@ -3745,7 +4015,9 @@ const ScreenRenderer = (() => {
     photoView:    document.getElementById('screen-photo-view'),
     stopwatch:    document.getElementById('screen-stopwatch'),
     videoBrowser: document.getElementById('screen-video-browser'),
-    videoPlayer:  document.getElementById('screen-video-player')
+    videoPlayer:  document.getElementById('screen-video-player'),
+    podcastBrowser: document.getElementById('screen-podcast-browser'),
+    podcastPlayer:  document.getElementById('screen-podcast-player')
   };
 
   function render() {
@@ -3780,6 +4052,12 @@ const ScreenRenderer = (() => {
       case STATES.VIDEO_PLAYER:
                              renderVideoPlayer();
                              states.videoPlayer.classList.add('active');  break;
+      case STATES.PODCAST_BROWSER:
+                             renderPodcastBrowser();
+                             states.podcastBrowser.classList.add('active'); break;
+      case STATES.PODCAST_PLAYER:
+                             renderPodcastPlayer();
+                             states.podcastPlayer.classList.add('active'); break;
     }
     updateStatusLabels();
     updatePlayIndicators();
@@ -4011,9 +4289,62 @@ const ScreenRenderer = (() => {
     if (!f) return;
     const v = VIDEOS_FEED[appState._videoBrowserIdx || 0];
     if (!v) return;
-    // Setting src triggers playback. autoplay+playsinline so it works on mobile.
-    f.src = 'https://www.youtube.com/embed/' + v.id +
-            '?autoplay=1&playsinline=1&rel=0&modestbranding=1';
+    // youtube-nocookie tends to accept embeds that the regular domain rejects
+    // (error 150/153). Dropping autoplay too — browsers increasingly block it
+    // and the resulting "needs user gesture" failure surfaces as error 153 on
+    // some videos. The Play button on the embed handles startup cleanly.
+    f.src = 'https://www.youtube-nocookie.com/embed/' + v.id +
+            '?playsinline=1&rel=0&modestbranding=1';
+    const link = document.getElementById('video-player-yt-link');
+    if (link) link.href = 'https://www.youtube.com/watch?v=' + v.id;
+  }
+
+  function renderPodcastBrowser() {
+    const title = document.getElementById('pb-podcast-title');
+    if (title) title.textContent = appState._podcastFeedKey === 'cn' ? 'AI Daily (中文)' : 'AI Daily';
+    const list = document.getElementById('podcast-browser-list');
+    if (!list) return;
+    const eps = appState._podcastEpisodes || [];
+    if (!eps.length) {
+      list.innerHTML = '<div id="podcast-loading">Loading latest episodes&hellip;</div>';
+      return;
+    }
+    list.innerHTML = '';
+    const sel = appState._podcastBrowserIdx || 0;
+    eps.forEach((ep, i) => {
+      const row = document.createElement('div');
+      row.className = 'podcast-row' + (i === sel ? ' selected' : '');
+      if (ep.artwork) {
+        const img = document.createElement('img');
+        img.className = 'podcast-art'; img.src = ep.artwork; img.alt = ''; img.loading = 'lazy';
+        row.appendChild(img);
+      } else {
+        const ph = document.createElement('div'); ph.className = 'podcast-art';
+        row.appendChild(ph);
+      }
+      const meta = document.createElement('div'); meta.className = 'podcast-meta';
+      const t = document.createElement('div'); t.className = 'podcast-title'; t.textContent = ep.title;
+      const s = document.createElement('div'); s.className = 'podcast-show';  s.textContent = ep.show;
+      meta.appendChild(t); meta.appendChild(s);
+      row.appendChild(meta);
+      list.appendChild(row);
+    });
+    const sr = list.querySelector('.podcast-row.selected');
+    if (sr) {
+      const target = sr.offsetTop - (list.clientHeight / 2) + (sr.offsetHeight / 2);
+      list.scrollTop = Math.max(0, target);
+    }
+  }
+
+  function renderPodcastPlayer() {
+    const ep = appState._currentPodcast;
+    if (!ep) return;
+    const bg = document.getElementById('podcast-player-bg');
+    const art = document.getElementById('podcast-player-art');
+    if (bg && ep.artwork) bg.style.backgroundImage = 'url("' + ep.artwork + '")';
+    if (art) art.src = ep.artwork || '';
+    document.getElementById('podcast-player-title').textContent = ep.title || '';
+    document.getElementById('podcast-player-show').textContent  = ep.show  || '';
   }
 
   function renderPhotoThumbnailGrid(container, offset) {
@@ -4334,6 +4665,20 @@ document.getElementById('hold-switch').addEventListener('keydown', e => {
 
 // Audio events
 audioEl.addEventListener('timeupdate', () => {
+  // Podcast playback path — audioEl shared with music, branch on state.
+  if (appState.state === STATES.PODCAST_PLAYER) {
+    const cur = audioEl.currentTime;
+    const dur = audioEl.duration || 0;
+    const pct = dur ? cur / dur * 100 : 0;
+    const fill = document.getElementById('podcast-player-fill');
+    if (fill) fill.style.width = pct + '%';
+    const el = document.getElementById('podcast-player-elapsed');
+    const re = document.getElementById('podcast-player-remaining');
+    if (el) el.textContent = formatTime(cur);
+    if (re) re.textContent = '-' + formatTime(Math.max(0, dur - cur));
+    return;
+  }
+
   if (!appState.currentTrack) return;
   const cur = audioEl.currentTime;
   const dur = audioEl.duration || 0;
@@ -4351,6 +4696,11 @@ audioEl.addEventListener('timeupdate', () => {
 });
 
 audioEl.addEventListener('ended', () => {
+  // Podcast playback: stay on the player view; user picks next via Menu.
+  if (appState.state === STATES.PODCAST_PLAYER) {
+    audioEl.currentTime = 0;
+    return;
+  }
   if (appState.settings.repeat === 'One') {
     audioEl.currentTime = 0;
     audioEl.play().catch(()=>{});
