@@ -26,8 +26,9 @@ html, body {
    ============================================================ */
 #ipod-wrapper {
   position: relative;
-  flex: 1;
   display: flex; align-items: center; justify-content: center;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 #ipod-device {
   position: relative;
@@ -768,8 +769,8 @@ html, body {
   flex-shrink: 0;
   width: 100%;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 45%, #ec4899 100%);
-  padding: 12px 28px;
-  display: flex; align-items: center; justify-content: center; gap: 16px;
+  padding: 8px 20px;
+  display: flex; align-items: center; justify-content: center; gap: 14px;
   box-sizing: border-box;
   z-index: 9999;
   cursor: pointer;
@@ -789,8 +790,8 @@ html, body {
 }
 #qr-img {
   display: block;
-  width: 80px; height: 80px;
-  border-radius: 6px;
+  width: 60px; height: 60px;
+  border-radius: 4px;
   image-rendering: pixelated;
 }
 #qr-text {
@@ -816,7 +817,7 @@ html, body {
 <!-- Vivid QR banner — click anywhere to dismiss -->
 <div id="qr-bar" aria-label="Scan QR code to open Halcyon. Tap after 3 seconds to dismiss.">
   <div id="qr-card">
-    <img id="qr-img" alt="QR code" src="" width="80" height="80">
+    <img id="qr-img" alt="" src="" width="60" height="60">
   </div>
   <div id="qr-text">
     <div id="qr-label">Scan to open Halcyon</div>
@@ -3167,7 +3168,8 @@ function recalcScale() {
   const deviceH = 430, deviceW = 257;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const maxH = vh - 40 - qrH - 20; // 20 = body padding-top
+  // 20 = body padding-top, 30 = bottom safe margin (mobile browser chrome)
+  const maxH = vh - 20 - qrH - 30;
   const maxW = vw - 20;
   const scaleByH = maxH / deviceH;
   const scaleByW = maxW / deviceW;
@@ -3253,19 +3255,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     ? 'https://final-omega-teal.vercel.app'
     : window.location.href.split('?')[0];
 
-  const s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
-  s.onload = () => {
-    QRCode.toDataURL(url, {
-      width: 200, margin: 1,
-      color: { dark: '#6366f1', light: '#ffffff' },
-      errorCorrectionLevel: 'M'
-    }, (err, dataUrl) => {
-      if (!err) document.getElementById('qr-img').src = dataUrl;
-    });
-  };
-  // Don't hide bar on CDN failure — gradient label is still useful.
-  document.head.appendChild(s);
+  // Use a URL-based QR API — no JS library needed, works everywhere.
+  const img = document.getElementById('qr-img');
+  img.src = 'https://api.qrserver.com/v1/create-qr-code/'
+    + '?size=120x120&color=6366f1&bgcolor=ffffff&margin=4'
+    + '&data=' + encodeURIComponent(url);
+  img.onerror = () => { img.style.display = 'none'; };
 })();
 </script>
 </body>
