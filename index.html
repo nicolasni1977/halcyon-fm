@@ -763,50 +763,72 @@ html, body {
 }
 
 /* ============================================================
-   13. APPLE-STYLE QR CODE BAR
+   13. QR CODE BAR — Silver metallic / Red Dot quality
    ============================================================ */
 #qr-bar {
   flex-shrink: 0;
   width: 100%;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 45%, #ec4899 100%);
-  padding: 8px 20px;
+  background: linear-gradient(180deg,
+    #ffffff 0%,
+    #f6f6f6 20%,
+    #ebebeb 50%,
+    #dcdcdc 78%,
+    #cccccc 100%
+  );
+  border-bottom: 1px solid #a0a0a0;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.98),
+    0 3px 8px rgba(0,0,0,0.16);
+  padding: 9px 20px;
   display: flex; align-items: center; justify-content: center; gap: 14px;
   box-sizing: border-box;
   z-index: 9999;
   cursor: pointer;
-  transition: opacity 280ms ease, transform 280ms ease;
+  transition: opacity 280ms ease;
 }
 #qr-bar.hidden {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-8px);
 }
 #qr-card {
-  background: #ffffff;
-  border-radius: 10px;
-  padding: 6px;
+  background: #fff;
+  border-radius: 3px;
+  padding: 5px;
   flex-shrink: 0;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  border: 0.5px solid rgba(0,0,0,0.14);
+  box-shadow: 0 1px 5px rgba(0,0,0,0.13);
 }
 #qr-img {
   display: block;
   width: 60px; height: 60px;
-  border-radius: 4px;
+  border-radius: 1px;
   image-rendering: pixelated;
 }
 #qr-text {
-  display: flex; flex-direction: column; gap: 5px;
+  display: flex; flex-direction: column; gap: 4px;
   font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
 }
 #qr-label {
-  font-size: 15px; font-weight: 700;
-  letter-spacing: 0.01em;
-  color: #ffffff;
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: #111;
+  display: flex; align-items: center; gap: 7px;
+}
+#qr-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: #cc0000;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(204,0,0,0.18);
 }
 #qr-dismiss {
-  font-size: 11px;
-  color: rgba(255,255,255,0.7);
-  letter-spacing: 0.02em;
+  font-size: 9px;
+  color: #888;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding-left: 15px;
 }
 </style>
 </head>
@@ -814,14 +836,14 @@ html, body {
 
 <div id="aria-announce" aria-live="polite" aria-atomic="true"></div>
 
-<!-- Vivid QR banner — click anywhere to dismiss -->
+<!-- Silver metallic QR bar — Red Dot design quality -->
 <div id="qr-bar" aria-label="Scan QR code to open Halcyon. Tap after 3 seconds to dismiss.">
   <div id="qr-card">
     <img id="qr-img" alt="" src="" width="60" height="60">
   </div>
   <div id="qr-text">
-    <div id="qr-label">Scan to open Halcyon</div>
-    <div id="qr-dismiss">tap anywhere to dismiss</div>
+    <div id="qr-label"><span id="qr-dot"></span>Halcyon</div>
+    <div id="qr-dismiss">Scan to open &nbsp;·&nbsp; Tap to dismiss</div>
   </div>
 </div>
 
@@ -3167,9 +3189,10 @@ function recalcScale() {
     ? (qrBar.offsetHeight + 14) : 0; // 14 = flex gap
   const deviceH = 430, deviceW = 257;
   const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  // 20 = body padding-top, 30 = bottom safe margin (mobile browser chrome)
-  const maxH = vh - 20 - qrH - 30;
+  // clientHeight excludes mobile browser chrome (address bar, nav bar) more reliably than innerHeight
+  const vh = document.documentElement.clientHeight;
+  // 20 = body padding-top, 60 = bottom safe zone (mobile chrome + margin)
+  const maxH = vh - 20 - qrH - 60;
   const maxW = vw - 20;
   const scaleByH = maxH / deviceH;
   const scaleByW = maxW / deviceW;
