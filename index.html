@@ -455,6 +455,46 @@ html, body {
   background-position: center;
   background-repeat: no-repeat;
 }
+/* Scrolling lyrics overlay — sits over the art, beneath the bottom info / scrubber.
+   pointer-events:none so it never blocks input. Mask gradients fade text in at the
+   bottom and out at the top. */
+#np-lyrics {
+  position: absolute;
+  left: 0; right: 0;
+  top: 8px; bottom: 90px; /* leave room for the bottom title/artist block */
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+  -webkit-mask-image: linear-gradient(to bottom,
+    transparent 0%, #000 28%, #000 72%, transparent 100%);
+          mask-image: linear-gradient(to bottom,
+    transparent 0%, #000 28%, #000 72%, transparent 100%);
+}
+#np-lyrics-track {
+  position: absolute;
+  left: 0; right: 0;
+  top: 100%;            /* starts off-screen at the bottom */
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 10px;
+  text-align: center;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #fff;
+  text-shadow:
+    0 1px 2px rgba(0,0,0,0.85),
+    0 0 6px rgba(0,0,0,0.55);
+  animation: np-lyrics-scroll 60s linear infinite;
+  will-change: transform;
+}
+#np-lyrics-track > div { white-space: pre-wrap; }
+@keyframes np-lyrics-scroll {
+  from { transform: translateY(0); }
+  to   { transform: translateY(calc(-100% - 200px)); }
+}
 /* Subtle vignette + scrim across the whole art for legibility */
 #screen-now-playing .split-pane::before {
   content: '';
@@ -1028,6 +1068,9 @@ html, body {
             </div>
             <div class="right-pane" id="np-art-pane">
               <div class="art-container" id="np-art-container"></div>
+              <div id="np-lyrics" aria-hidden="true">
+                <div id="np-lyrics-track"></div>
+              </div>
             </div>
           </div>
           <div class="scrubber-bar">
@@ -2674,6 +2717,49 @@ function showVolumeOverlay(vol) {
   _volumeOverlayTimer = setTimeout(() => el.classList.remove('visible'), 1400);
 }
 
+// ============================================================
+// LYRICS — keyed by track id. Each value is an array of lines that
+// scroll up the Now Playing art. Add real lyrics here as needed;
+// tracks not in this map fall back to a tasteful "no-lyrics" card
+// built from the track metadata.
+// ============================================================
+const LYRICS = {
+  // Example shape — uncomment and populate as you add real lyrics:
+  // 9001: [
+  //   '哪里有彩虹告诉我',
+  //   '能不能把我的愿望还给我',
+  //   '为什么天这么安静',
+  //   '所有的云都跑到我这里',
+  // ],
+};
+function renderLyricsForTrack(track) {
+  const el = document.getElementById('np-lyrics-track');
+  if (!el || !track) return;
+  el.innerHTML = '';
+  const lines = LYRICS[track.id];
+  const items = (lines && lines.length) ? lines : [
+    track.title  || '',
+    track.artist ? '— ' + track.artist + ' —' : '',
+    '',
+    '✦',
+    '',
+    'Instrumental',
+    '',
+    track.album || '',
+    '',
+    '✦'
+  ].filter(s => s !== null && s !== undefined);
+  items.forEach(t => {
+    const div = document.createElement('div');
+    div.textContent = t;
+    el.appendChild(div);
+  });
+  // Restart the scroll animation cleanly on each new track.
+  el.style.animation = 'none';
+  void el.offsetHeight;
+  el.style.animation = '';
+}
+
 async function playTrack(track) {
   if (!track) return;
   appState.currentTrack = track;
@@ -3178,6 +3264,9 @@ const ScreenRenderer = (() => {
     // Art
     const artCont = document.getElementById('np-art-container');
     renderArtInContainer(artCont, appState._currentCoverURL, track.id);
+
+    // Lyrics — populates the scrolling overlay above the bottom title block
+    renderLyricsForTrack(track);
   }
 
   function renderSettings() {
