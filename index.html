@@ -14,8 +14,9 @@ html, body {
   width: 100%; height: 100%;
   overflow: hidden;
   background: #FFFFFF;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
   gap: 14px;
+  padding-top: 20px;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -25,6 +26,7 @@ html, body {
    ============================================================ */
 #ipod-wrapper {
   position: relative;
+  flex: 1;
   display: flex; align-items: center; justify-content: center;
 }
 #ipod-device {
@@ -3157,7 +3159,7 @@ function recalcScale() {
   const deviceH = 430, deviceW = 257;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const maxH = vh - 40 - qrH;
+  const maxH = vh - 40 - qrH - 20; // 20 = body padding-top
   const maxW = vw - 20;
   const scaleByH = maxH / deviceH;
   const scaleByW = maxW / deviceW;
