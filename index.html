@@ -921,6 +921,25 @@ html, body {
   #ipod-wrapper { transform-origin: top center; }
 }
 
+/* Audio visualizer canvas — fixed at top of page, centered above the iPod.
+   Hidden until first audio play (fades in once the Web Audio graph is set up). */
+#audio-viz {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, 92vw);
+  height: 110px;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+#audio-viz.active { opacity: 1; }
+@media (max-width: 480px) {
+  #audio-viz { height: 78px; top: 8px; width: 94vw; }
+}
+
 /* aria-live region */
 #aria-announce {
   position: absolute;
@@ -1235,6 +1254,11 @@ html, body {
   </div>
   <div id="qr-text">Open on phone</div>
 </div>
+
+<!-- Audio visualizer: serpentine dot wave, fixed at the top of the page,
+     centered above the iPod. Reacts to whatever audioEl is currently
+     playing (music or podcast). Freezes on last frame when audio pauses. -->
+<canvas id="audio-viz" aria-hidden="true"></canvas>
 
 <div id="ipod-wrapper">
   <div id="ipod-device"
@@ -3393,6 +3417,134 @@ const audioEl = document.createElement('audio');
 audioEl.preload = 'auto';
 audioEl.volume = 0.7;  // default level — adjusted via wheel rotation on Now Playing
 document.body.appendChild(audioEl);
+
+// ============================================================
+// AUDIO VISUALIZER — fixed canvas above the iPod, reacts to audioEl.
+// Lazy-inits a Web Audio graph on first play (createMediaElementSource can
+// only be called once per element; we keep it cached in a closure). The RAF
+// loop draws a multi-strand dotted serpentine wave whose amplitude tracks
+// total audio energy and per-dot opacity tracks the matching frequency bin.
+// On pause/ended we stop the loop so the last frame stays as-is.
+// ============================================================
+const AudioViz = (() => {
+  let canvas = null, ctx2d = null, dpr = 1;
+  let actx = null, analyser = null, source = null, data = null;
+  let raf = null, phase = 0, inited = false;
+
+  function setupCanvas() {
+    if (!canvas) return;
+    dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width  = Math.max(1, Math.round(rect.width  * dpr));
+    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    ctx2d = canvas.getContext('2d');
+    ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function init() {
+    if (inited) return;
+    canvas = document.getElementById('audio-viz');
+    if (!canvas) return;
+    setupCanvas();
+    window.addEventListener('resize', () => { setupCanvas(); });
+    inited = true;
+  }
+
+  function connectAudio() {
+    if (actx || !audioEl) return;
+    try {
+      const ACtor = window.AudioContext || window.webkitAudioContext;
+      if (!ACtor) return;
+      actx = new ACtor();
+      source = actx.createMediaElementSource(audioEl);
+      analyser = actx.createAnalyser();
+      analyser.fftSize = 128;            // 64 bins, plenty for a wave
+      analyser.smoothingTimeConstant = 0.78;
+      source.connect(analyser);
+      analyser.connect(actx.destination); // keep audio audible
+      data = new Uint8Array(analyser.frequencyBinCount);
+    } catch (e) {
+      // createMediaElementSource throws if called twice — degrade silently.
+      actx = null;
+    }
+  }
+
+  function draw() {
+    if (!ctx2d || !canvas) return;
+    const W = canvas.width  / dpr;
+    const H = canvas.height / dpr;
+
+    // Total energy 0..1 from the analyser, plus a slow baseline drift so the
+    // wave still breathes during very quiet passages.
+    let energy = 0;
+    if (analyser && data) {
+      analyser.getByteFrequencyData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i++) sum += data[i];
+      energy = sum / (data.length * 255);
+    }
+
+    ctx2d.clearRect(0, 0, W, H);
+
+    const cols = 80;
+    const rows = 5;
+    const cellW = W / cols;
+    const baseY = H / 2;
+    const maxAmp = H * 0.34;
+
+    phase += 0.022 + energy * 0.08;
+
+    for (let r = 0; r < rows; r++) {
+      const rNorm = (r / (rows - 1)) - 0.5;  // -0.5..0.5
+      for (let c = 0; c < cols; c++) {
+        const cNorm = c / cols;
+        const x = c * cellW + cellW / 2;
+
+        // Two sine layers create the serpentine "twist" feel.
+        const w1 = Math.sin(cNorm * 6  + phase * 1.6 + rNorm * 1.4);
+        const w2 = Math.sin(cNorm * 12 + phase * 1.1 + rNorm * 0.7);
+        const wave = w1 * 0.7 + w2 * 0.3;
+        const amp = maxAmp * (0.12 + energy * 0.88);
+        const y = baseY + wave * amp + rNorm * 14;
+
+        // Per-dot magnitude from the matching frequency bin.
+        const bin = Math.floor(cNorm * (data ? data.length : 32));
+        const mag = data ? data[bin] / 255 : 0;
+        const dotR = 1.0 + mag * 2.4;
+        const opacity = 0.14 + mag * 0.76;
+
+        ctx2d.beginPath();
+        ctx2d.arc(x, y, dotR, 0, Math.PI * 2);
+        ctx2d.fillStyle = 'rgba(20, 20, 24, ' + opacity + ')';
+        ctx2d.fill();
+      }
+    }
+  }
+
+  function start() {
+    init();
+    if (!canvas) return;
+    connectAudio();
+    if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
+    canvas.classList.add('active');
+    if (raf) return;            // already looping
+    const loop = () => { draw(); raf = requestAnimationFrame(loop); };
+    raf = requestAnimationFrame(loop);
+  }
+
+  function stop() {
+    // Cancel the loop — leave the last frame on canvas (per spec).
+    if (raf) cancelAnimationFrame(raf);
+    raf = null;
+  }
+
+  return { init: init, start: start, stop: stop };
+})();
+
+audioEl.addEventListener('play',  () => AudioViz.start());
+audioEl.addEventListener('pause', () => AudioViz.stop());
+audioEl.addEventListener('ended', () => AudioViz.stop());
+document.addEventListener('DOMContentLoaded', () => AudioViz.init());
 
 let _currentAudioURL = null;
 let _volumeOverlayTimer = null;
