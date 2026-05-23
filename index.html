@@ -799,6 +799,38 @@ html, body {
   text-align: center;
 }
 #qr-label, #qr-dismiss, #qr-dot { display: none; }
+
+/* ---- Photo browser ---- */
+#screen-photo-browser { flex-direction: column; }
+#photo-grid {
+  flex: 1; min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  overflow: hidden;
+  background: #111;
+}
+.photo-thumb-cell { position: relative; overflow: hidden; }
+.photo-thumb-cell img { width:100%; height:100%; object-fit:cover; display:block; }
+.photo-thumb-cell.sel::after {
+  content:''; position:absolute; inset:0;
+  border: 2px solid #fff; pointer-events:none;
+}
+/* Photo full view */
+#screen-photo-view { background:#000; flex-direction:column; }
+#photo-view-img { width:100%; flex:1; object-fit:contain; display:block; min-height:0; }
+#photo-view-caption {
+  text-align:center; font-size:9px; color:rgba(255,255,255,0.55);
+  padding:2px 0 4px; background:#000; font-family:-apple-system,sans-serif;
+  letter-spacing:0.05em;
+}
+/* Right-pane photo thumbnail grid */
+.photo-thumb-grid {
+  width:100%; height:100%;
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:1px; overflow:hidden; background:#111;
+}
+.photo-thumb-grid img { width:100%; height:100%; object-fit:cover; display:block; }
 </style>
 </head>
 <body>
@@ -942,6 +974,22 @@ html, body {
           <div id="coverflow-tracklist"></div>
         </div>
 
+        <!-- PHOTO BROWSER state -->
+        <div id="screen-photo-browser" class="screen-state">
+          <div class="status-bar">
+            <span class="status-label" id="pb-status-label">Photos</span>
+            <span class="status-play" id="pb-play-indicator">&#9654;</span>
+            <div class="battery-pill"></div>
+          </div>
+          <div id="photo-grid"></div>
+        </div>
+
+        <!-- PHOTO VIEW state -->
+        <div id="screen-photo-view" class="screen-state">
+          <img id="photo-view-img" alt="">
+          <div id="photo-view-caption"></div>
+        </div>
+
         <!-- Overlays (inside screen-inner) -->
         <div id="overlay-backlight"></div>
         <div id="overlay-quickscroll">
@@ -1018,7 +1066,9 @@ const STATES = {
   SUBMENU: 'SUBMENU',
   COVER_FLOW: 'COVER_FLOW',
   NOW_PLAYING: 'NOW_PLAYING',
-  SETTINGS: 'SETTINGS'
+  SETTINGS: 'SETTINGS',
+  PHOTO_BROWSER: 'PHOTO_BROWSER',
+  PHOTO_VIEW: 'PHOTO_VIEW'
 };
 
 const LS_KEYS = {
@@ -1699,6 +1749,25 @@ function handleMenu() {
     return;
   }
 
+  if (appState.state === STATES.PHOTO_VIEW) {
+    appState.menuStack.pop();
+    appState.state = STATES.PHOTO_BROWSER;
+    ScreenRenderer.render();
+    return;
+  }
+
+  if (appState.state === STATES.PHOTO_BROWSER) {
+    const prev = appState.menuStack.pop();
+    if (prev) {
+      appState.currentMenu = prev.items;
+      appState.selectedIndex = prev.selectedIndex;
+    }
+    appState.state = STATES.SUBMENU;
+    appState._submenuOwner = 'Photos';
+    ScreenRenderer.render();
+    return;
+  }
+
   if (appState.state === STATES.NOW_PLAYING) {
     if (appState.menuStack.length > 0) {
       const prev = appState.menuStack.pop();
@@ -1808,6 +1877,13 @@ function handleScroll(dir) {
     return;
   } else if (appState.state === STATES.COVER_FLOW) {
     moveCoverFlow(dir); return;
+  } else if (appState.state === STATES.PHOTO_BROWSER || appState.state === STATES.PHOTO_VIEW) {
+    const total = PHOTO_POOL.length;
+    appState._photoBrowserIdx = Math.max(0, Math.min(total - 1,
+      (appState._photoBrowserIdx || 0) + dir));
+    ScreenRenderer.render();
+    AudioEngine.tick();
+    return;
   } else return;
 
   const len = list.length;
@@ -2120,9 +2196,41 @@ function navigateSubmenuSelect() {
     return;
   }
 
-  // ============== VIDEOS / PHOTOS / PODCASTS stubs ==============
+  // ============== PHOTOS submenu ==============
+  if (appState.state === STATES.SUBMENU && appState._submenuOwner === 'Photos') {
+    if (item === 'All Photos' || item === 'Photo Library') {
+      appState.menuStack.push({ items: appState.currentMenu, selectedIndex: appState.selectedIndex, breadcrumb: 'Photos' });
+      appState.state = STATES.PHOTO_BROWSER;
+      appState._photoBrowserIdx = 0;
+      appState._photoBrowserTitle = item;
+      appState.selectedIndex = 0;
+      ScreenRenderer.render();
+    } else {
+      showInfoScreen('Slideshow Settings',
+        'Time Per Slide: 3s\nRepeat: Off\nShuffle: Off\nTransitions: Dissolve\nTV Out: Ask\nTV Signal: NTSC');
+    }
+    return;
+  }
+
+  // ============== PHOTO BROWSER — enter full view ==============
+  if (appState.state === STATES.PHOTO_BROWSER) {
+    appState.menuStack.push({ items: [], selectedIndex: appState._photoBrowserIdx, breadcrumb: appState._photoBrowserTitle });
+    appState.state = STATES.PHOTO_VIEW;
+    ScreenRenderer.render();
+    return;
+  }
+
+  // ============== PHOTO VIEW — back to browser ==============
+  if (appState.state === STATES.PHOTO_VIEW) {
+    appState.menuStack.pop();
+    appState.state = STATES.PHOTO_BROWSER;
+    ScreenRenderer.render();
+    return;
+  }
+
+  // ============== VIDEOS / PODCASTS stubs ==============
   if (appState.state === STATES.SUBMENU &&
-      (appState._submenuOwner === 'Videos' || appState._submenuOwner === 'Photos' || appState._submenuOwner === 'Podcasts')) {
+      (appState._submenuOwner === 'Videos' || appState._submenuOwner === 'Podcasts')) {
     showInfoScreen(item, 'No ' + item.toLowerCase() + ' synced.\nThis is a music-first build.');
     return;
   }
@@ -2643,13 +2751,15 @@ function showContextMenu() {
 // ============================================================
 const ScreenRenderer = (() => {
   const states = {
-    off:        document.getElementById('screen-off'),
-    boot:       document.getElementById('screen-boot'),
-    mainMenu:   document.getElementById('screen-main-menu'),
-    submenu:    document.getElementById('screen-submenu'),
-    nowPlaying: document.getElementById('screen-now-playing'),
-    settings:   document.getElementById('screen-settings'),
-    coverflow:  document.getElementById('screen-coverflow')
+    off:          document.getElementById('screen-off'),
+    boot:         document.getElementById('screen-boot'),
+    mainMenu:     document.getElementById('screen-main-menu'),
+    submenu:      document.getElementById('screen-submenu'),
+    nowPlaying:   document.getElementById('screen-now-playing'),
+    settings:     document.getElementById('screen-settings'),
+    coverflow:    document.getElementById('screen-coverflow'),
+    photoBrowser: document.getElementById('screen-photo-browser'),
+    photoView:    document.getElementById('screen-photo-view')
   };
 
   function render() {
@@ -2669,6 +2779,12 @@ const ScreenRenderer = (() => {
                              states.settings.classList.add('active');   break;
       case STATES.COVER_FLOW: renderCoverFlow();
                              states.coverflow.classList.add('active');  break;
+      case STATES.PHOTO_BROWSER:
+                             renderPhotoBrowser();
+                             states.photoBrowser.classList.add('active'); break;
+      case STATES.PHOTO_VIEW:
+                             renderPhotoView();
+                             states.photoView.classList.add('active');  break;
     }
     updateStatusLabels();
     updatePlayIndicators();
@@ -2820,26 +2936,76 @@ const ScreenRenderer = (() => {
     });
   }
 
+  function renderPhotoBrowser() {
+    document.getElementById('pb-status-label').textContent =
+      appState._photoBrowserTitle || 'Photos';
+    const photos = PHOTO_POOL;
+    const sel = appState._photoBrowserIdx || 0;
+    const cols = 4, rows = 3, pageSize = cols * rows;
+    const page = Math.floor(sel / pageSize);
+    const start = page * pageSize;
+    const grid = document.getElementById('photo-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < pageSize && (start + i) < photos.length; i++) {
+      const idx = start + i;
+      const cell = document.createElement('div');
+      cell.className = 'photo-thumb-cell' + (idx === sel ? ' sel' : '');
+      const img = document.createElement('img');
+      img.src = photos[idx]; img.alt = ''; img.loading = 'lazy';
+      cell.appendChild(img);
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderPhotoView() {
+    const photos = PHOTO_POOL;
+    const sel = appState._photoBrowserIdx || 0;
+    document.getElementById('photo-view-img').src = photos[sel] || '';
+    document.getElementById('photo-view-caption').textContent =
+      (sel + 1) + ' of ' + photos.length;
+  }
+
+  function renderPhotoThumbnailGrid(container, offset) {
+    container.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'photo-thumb-grid';
+    for (let i = 0; i < 9; i++) {
+      const img = document.createElement('img');
+      img.src = PHOTO_POOL[(offset + i) % PHOTO_POOL.length];
+      img.alt = ''; img.loading = 'lazy';
+      grid.appendChild(img);
+    }
+    container.appendChild(grid);
+  }
+
   function updateArtForCurrentMenu() {
     if (appState.state === STATES.MAIN_MENU) {
       const artCont = document.getElementById('main-art-container');
-      renderArtInContainer(artCont, appState._currentCoverURL, 0);
+      if (MAIN_MENU_ITEMS[appState.selectedIndex] === 'Photos') {
+        renderPhotoThumbnailGrid(artCont, appState.selectedIndex);
+      } else {
+        renderArtInContainer(artCont, appState._currentCoverURL, 0);
+      }
     } else if (appState.state === STATES.SUBMENU) {
       const artCont = document.getElementById('sub-art-container');
-      let coverURL = null;
-      let seed = 0;
-      if (appState._browseTracklist && appState._browseTracklist.length) {
-        // Show the photo assigned to whichever track is currently highlighted
-        const t = appState._browseTracklist[appState.selectedIndex]
-               || appState._browseTracklist[0];
-        if (t.coverBlob) {
-          coverURL = URL.createObjectURL(t.coverBlob);
-        } else {
-          coverURL = photoForTrack(t);
+      if (appState._submenuOwner === 'Photos') {
+        renderPhotoThumbnailGrid(artCont, appState.selectedIndex * 9);
+      } else {
+        let coverURL = null;
+        let seed = 0;
+        if (appState._browseTracklist && appState._browseTracklist.length) {
+          // Show the photo assigned to whichever track is currently highlighted
+          const t = appState._browseTracklist[appState.selectedIndex]
+                 || appState._browseTracklist[0];
+          if (t.coverBlob) {
+            coverURL = URL.createObjectURL(t.coverBlob);
+          } else {
+            coverURL = photoForTrack(t);
+          }
+          seed = t.id || 0;
         }
-        seed = t.id || 0;
+        renderArtInContainer(artCont, coverURL, seed);
       }
-      renderArtInContainer(artCont, coverURL, seed);
     }
   }
 
