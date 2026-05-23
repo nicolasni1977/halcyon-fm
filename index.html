@@ -1006,12 +1006,52 @@ html, body {
   opacity: 0.45;
 }
 /* Photo full view */
-#screen-photo-view { background:#000; flex-direction:column; }
-#photo-view-img { width:100%; flex:1; object-fit:contain; display:block; min-height:0; }
+/* Photo viewer — iOS Photos style: blurred-photo backdrop instead of black
+   letterbox bars. Sharp photo sits centered with object-fit:contain; the
+   empty space is filled with the same photo, scaled up & heavily blurred,
+   so it feels like the colors bleed off the edges. Caption floats as a
+   frosted-glass pill. */
+#screen-photo-view {
+  position: relative;
+  background: #000;       /* fallback for the first frame before bg paints */
+  overflow: hidden;
+}
+#photo-view-bg {
+  position: absolute;
+  inset: -24px;           /* extend past edges so the blur halo never reveals seams */
+  background-size: cover;
+  background-position: center;
+  filter: blur(28px) brightness(0.6) saturate(1.15);
+  transform: scale(1.12);
+  z-index: 0;
+  pointer-events: none;
+}
+#photo-view-img {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  display: block;
+  z-index: 1;
+}
 #photo-view-caption {
-  text-align:center; font-size:9px; color:rgba(255,255,255,0.55);
-  padding:2px 0 4px; background:#000; font-family:-apple-system,sans-serif;
-  letter-spacing:0.05em;
+  position: absolute;
+  bottom: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.92);
+  padding: 4px 11px;
+  background: rgba(0,0,0,0.42);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+          backdrop-filter: blur(14px) saturate(1.4);
+  border: 0.5px solid rgba(255,255,255,0.16);
+  border-radius: 12px;
+  white-space: nowrap;
 }
 /* Right-pane photo thumbnail grid */
 .photo-thumb-grid {
@@ -1274,6 +1314,7 @@ html, body {
 
         <!-- PHOTO VIEW state -->
         <div id="screen-photo-view" class="screen-state">
+          <div id="photo-view-bg"></div>
           <img id="photo-view-img" alt="">
           <div id="photo-view-caption"></div>
         </div>
@@ -1487,7 +1528,7 @@ const MOSAIC_PALETTE = [
 
 // All photos available as right-pane art when browsing tracks.
 const PHOTO_POOL = [
-  'assets/photo/IMG_7407.JPG','assets/photo/IMG_7409.JPG','assets/photo/IMG_7411.JPG',
+  'assets/photo/IMG_7411.JPG',
   'assets/photo/IMG_7418.JPG','assets/photo/IMG_7420.JPG','assets/photo/IMG_7421.JPG',
   'assets/photo/IMG_7423.JPG','assets/photo/IMG_7425.JPG','assets/photo/IMG_7429.JPG',
   'assets/photo/IMG_7434.JPG','assets/photo/IMG_7437.JPG','assets/photo/IMG_7438.JPG',
@@ -1510,11 +1551,8 @@ const PHOTO_POOL = [
   'assets/photo/IMG_7609.JPG','assets/photo/IMG_7612.JPG','assets/photo/IMG_7614.JPG',
   'assets/photo/IMG_7621.JPG','assets/photo/IMG_7625.JPG','assets/photo/IMG_7626.JPG',
   'assets/photo/IMG_7627.JPG','assets/photo/IMG_7628.JPG','assets/photo/IMG_7685.JPG',
-  'assets/photo/IMG_7694.JPG','assets/photo/IMG_7697.JPG','assets/photo/IMG_7698.JPG',
-  'assets/photo/IMG_7705.JPG','assets/photo/IMG_7706.JPG','assets/photo/IMG_7707.JPG',
-  'assets/photo/psbCA6P3ETG.jpg','assets/photo/psbCA9XV0IW.jpg','assets/photo/psbCAE5VTDE.jpg',
-  'assets/photo/psbCAEFE26L.jpg','assets/photo/psbCAH8DNEU.jpg','assets/photo/psbCANT4MAO.jpg',
-  'assets/photo/psbCAXDQ3R2.jpg'
+  'assets/photo/IMG_7694.JPG',
+  'assets/photo/IMG_7705.JPG'
 ];
 
 // Themed albums for "Photo Library". Without a vision API to inspect content,
@@ -3896,7 +3934,13 @@ const ScreenRenderer = (() => {
   function renderPhotoView() {
     const photos = appState._photoBrowserPhotos || PHOTO_POOL;
     const sel = appState._photoBrowserIdx || 0;
-    document.getElementById('photo-view-img').src = photos[sel] || '';
+    const url = photos[sel] || '';
+    const img = document.getElementById('photo-view-img');
+    const bg  = document.getElementById('photo-view-bg');
+    if (img) img.src = url;
+    // Set the blurred backdrop to the same image so the off-aspect space is
+    // filled with the photo's own colors instead of a harsh black bar.
+    if (bg) bg.style.backgroundImage = url ? 'url("' + url.replace(/"/g, '\\"') + '")' : '';
     document.getElementById('photo-view-caption').textContent =
       (sel + 1) + ' of ' + photos.length;
   }
