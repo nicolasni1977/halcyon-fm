@@ -540,6 +540,39 @@ html, body {
   pointer-events: all;
 }
 
+/* Volume overlay (Now Playing wheel rotation) */
+#overlay-volume {
+  position: absolute;
+  top: 22px; left: 14px; right: 14px;
+  background: rgba(0,0,0,0.82);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 5px;
+  padding: 9px 11px 8px;
+  display: none;
+  z-index: 70;
+  pointer-events: none;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+#overlay-volume.visible { display: block; }
+#volume-bar {
+  height: 5px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 3px;
+  overflow: hidden;
+}
+#volume-fill {
+  height: 100%; width: 0%;
+  background: #fff;
+  transition: width 80ms ease;
+}
+#volume-pct {
+  text-align: right;
+  font-size: 9px;
+  color: rgba(255,255,255,0.7);
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+}
+
 /* Quick scroll letter */
 #overlay-quickscroll {
   position: absolute; inset: 0;
@@ -1010,6 +1043,10 @@ html, body {
 
         <!-- Overlays (inside screen-inner) -->
         <div id="overlay-backlight"></div>
+        <div id="overlay-volume">
+          <div id="volume-bar"><div id="volume-fill"></div></div>
+          <div id="volume-pct">0%</div>
+        </div>
         <div id="overlay-quickscroll">
           <span id="quickscroll-letter">A</span>
         </div>
@@ -1902,7 +1939,35 @@ function handleScroll(dir) {
   else if (appState.state === STATES.SUBMENU) list = appState.currentMenu;
   else if (appState.state === STATES.SETTINGS) list = SETTINGS_ITEMS;
   else if (appState.state === STATES.NOW_PLAYING) {
-    // Scroll does nothing special in now playing from keyboard
+    const mode = appState.centerButtonMode || 'default';
+    if (mode === 'scrubber') {
+      // Seek through the song (2% per tick)
+      if (audioEl.duration) {
+        const step = audioEl.duration * 0.02;
+        audioEl.currentTime = Math.max(0,
+          Math.min(audioEl.duration, audioEl.currentTime + dir * step));
+        AudioEngine.tick();
+      }
+    } else if (mode === 'rating') {
+      if (appState.currentTrack) {
+        const cur = appState.ratings[appState.currentTrack.id] || 0;
+        const next = Math.max(0, Math.min(5, cur + dir));
+        if (next !== cur) {
+          appState.ratings[appState.currentTrack.id] = next;
+          saveRatings();
+          ScreenRenderer.render();
+          AudioEngine.tick();
+        }
+      }
+    } else {
+      // Default mode: adjust volume (5% per tick)
+      const cur = (typeof audioEl.volume === 'number') ? audioEl.volume : 0.7;
+      const next = Math.max(0, Math.min(1, cur + dir * 0.05));
+      audioEl.volume = next;
+      appState.volume = next;
+      showVolumeOverlay(next);
+      AudioEngine.tick();
+    }
     return;
   } else if (appState.state === STATES.COVER_FLOW) {
     moveCoverFlow(dir); return;
@@ -2395,9 +2460,20 @@ function shuffleAll() {
 // ============================================================
 const audioEl = document.createElement('audio');
 audioEl.preload = 'auto';
+audioEl.volume = 0.7;  // default level — adjusted via wheel rotation on Now Playing
 document.body.appendChild(audioEl);
 
 let _currentAudioURL = null;
+let _volumeOverlayTimer = null;
+function showVolumeOverlay(vol) {
+  const el = document.getElementById('overlay-volume');
+  if (!el) return;
+  document.getElementById('volume-fill').style.width = (vol * 100) + '%';
+  document.getElementById('volume-pct').textContent = Math.round(vol * 100) + '%';
+  el.classList.add('visible');
+  clearTimeout(_volumeOverlayTimer);
+  _volumeOverlayTimer = setTimeout(() => el.classList.remove('visible'), 1400);
+}
 
 async function playTrack(track) {
   if (!track) return;
