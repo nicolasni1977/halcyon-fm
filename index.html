@@ -1012,8 +1012,9 @@ html, body {
    so it feels like the colors bleed off the edges. Caption floats as a
    frosted-glass pill. */
 #screen-photo-view {
-  position: relative;
-  background: #000;       /* fallback for the first frame before bg paints */
+  /* Don't override .screen-state's position:absolute / inset:0 — that's how
+     the screen fills the LCD. Just paint the fallback background + clip. */
+  background: #000;
   overflow: hidden;
 }
 #photo-view-bg {
