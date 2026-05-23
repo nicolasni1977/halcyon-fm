@@ -3745,8 +3745,14 @@ const ScreenRenderer = (() => {
   function updateArtForCurrentMenu() {
     if (appState.state === STATES.MAIN_MENU) {
       const artCont = document.getElementById('main-art-container');
-      if (MAIN_MENU_ITEMS[appState.selectedIndex] === 'Photos') {
+      const item = MAIN_MENU_ITEMS[appState.selectedIndex];
+      if (item === 'Photos') {
         renderPhotoThumbnailGrid(artCont, appState.selectedIndex);
+      } else if (item === 'Music' || item === 'Shuffle Songs') {
+        // Show a 2x2 album-cover preview (reuse the submenu's Albums renderer).
+        renderMusicSubmenuArt(artCont, 'Albums');
+      } else if (item === 'Now Playing' && appState._currentCoverURL) {
+        renderArtInContainer(artCont, appState._currentCoverURL, 0);
       } else {
         renderArtInContainer(artCont, appState._currentCoverURL, 0);
       }
