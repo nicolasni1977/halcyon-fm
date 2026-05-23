@@ -2211,6 +2211,11 @@ function enterPhotoViewWithZoom() {
 }
 
 function exitPhotoViewWithZoom() {
+  // Stop the slideshow auto-advance the moment the user leaves the full view.
+  if (appState._slideshowTimer) {
+    clearTimeout(appState._slideshowTimer);
+    appState._slideshowTimer = null;
+  }
   const fullImg   = document.getElementById('photo-view-img');
   const overlay   = document.getElementById('photo-zoom-overlay');
   const zoomImg   = document.getElementById('photo-zoom-img');
@@ -3122,19 +3127,39 @@ function navigateSubmenuSelect() {
   }
   // ============== PODCASTS submenu ==============
   if (appState.state === STATES.SUBMENU && appState._submenuOwner === 'Podcasts') {
-    if (item === 'AI Daily (EN)' || item === 'AI Daily (中文)') {
+    // All three Podcasts entries drill into PODCAST_BROWSER. The feed key
+    // controls which iTunes Search the fetcher runs (or merges, for 'all').
+    let feedKey = null;
+    if (item === 'AI Daily (EN)')   feedKey = 'en';
+    else if (item === 'AI Daily (中文)') feedKey = 'cn';
+    else if (item === 'All Podcasts')   feedKey = 'all';
+    if (feedKey) {
       appState.menuStack.push({
         items: appState.currentMenu, selectedIndex: appState.selectedIndex,
         breadcrumb: 'Podcasts', parentOwner: 'Podcasts'
       });
       appState.state = STATES.PODCAST_BROWSER;
-      appState._podcastFeedKey = (item === 'AI Daily (中文)') ? 'cn' : 'en';
+      appState._podcastFeedKey = feedKey;
       appState._podcastBrowserIdx = 0;
       appState._podcastEpisodes = [];
       appState.selectedIndex = 0;
       ScreenRenderer.render();
-      const feedKey = appState._podcastFeedKey;
-      fetchPodcastEpisodes(feedKey).then(eps => {
+      const fetcher = (feedKey === 'all')
+        ? Promise.all([fetchPodcastEpisodes('en'), fetchPodcastEpisodes('cn')])
+            .then(([en, cn]) => {
+              const merged = [...(en || []), ...(cn || [])];
+              const seen = new Set();
+              const uniq = merged.filter(e => {
+                const k = e.audio || (e.title + '|' + e.show);
+                if (seen.has(k)) return false;
+                seen.add(k);
+                return true;
+              });
+              uniq.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+              return uniq.slice(0, 24);
+            })
+        : fetchPodcastEpisodes(feedKey);
+      fetcher.then(eps => {
         if (appState.state === STATES.PODCAST_BROWSER && appState._podcastFeedKey === feedKey) {
           appState._podcastEpisodes = eps;
           if (appState._podcastBrowserIdx >= eps.length) appState._podcastBrowserIdx = 0;
@@ -3143,7 +3168,6 @@ function navigateSubmenuSelect() {
       });
       return;
     }
-    showInfoScreen(item, 'No ' + item.toLowerCase() + ' synced.\nUse "AI Daily" entries for live podcasts.');
     return;
   }
 
@@ -4251,6 +4275,19 @@ const ScreenRenderer = (() => {
     if (bg) bg.style.backgroundImage = url ? 'url("' + url.replace(/"/g, '\\"') + '")' : '';
     document.getElementById('photo-view-caption').textContent =
       (sel + 1) + ' of ' + photos.length;
+
+    // Slideshow auto-advance per the "Time Per Slide" setting.
+    // Each render schedules the next tick; manual scroll re-renders and resets.
+    if (appState._slideshowTimer) clearTimeout(appState._slideshowTimer);
+    const total = photos.length;
+    if (total > 1) {
+      appState._slideshowTimer = setTimeout(() => {
+        appState._slideshowTimer = null;
+        if (appState.state !== STATES.PHOTO_VIEW) return;
+        appState._photoBrowserIdx = ((appState._photoBrowserIdx || 0) + 1) % total;
+        ScreenRenderer.render();   // re-renders + reschedules the next tick
+      }, (appState._slideshowSec || 3) * 1000);
+    }
   }
 
   function renderVideoBrowser() {
@@ -4301,7 +4338,12 @@ const ScreenRenderer = (() => {
 
   function renderPodcastBrowser() {
     const title = document.getElementById('pb-podcast-title');
-    if (title) title.textContent = appState._podcastFeedKey === 'cn' ? 'AI Daily (中文)' : 'AI Daily';
+    if (title) {
+      const k = appState._podcastFeedKey;
+      title.textContent = (k === 'cn') ? 'AI Daily (中文)'
+                        : (k === 'all') ? 'All Podcasts'
+                        : 'AI Daily';
+    }
     const list = document.getElementById('podcast-browser-list');
     if (!list) return;
     const eps = appState._podcastEpisodes || [];
