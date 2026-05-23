@@ -814,7 +814,7 @@ html, body {
 <div id="aria-announce" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Vivid QR banner — click anywhere to dismiss -->
-<div id="qr-bar" role="button" aria-label="Scan QR code to open Halcyon. Click to dismiss.">
+<div id="qr-bar" aria-label="Scan QR code to open Halcyon. Tap after 3 seconds to dismiss.">
   <div id="qr-card">
     <img id="qr-img" alt="QR code" src="" width="80" height="80">
   </div>
@@ -3239,7 +3239,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ============================================================
 (function() {
   const bar = document.getElementById('qr-bar');
-  bar.addEventListener('click', () => { bar.classList.add('hidden'); recalcScale(); });
+
+  // Delay dismiss activation so an accidental first-tap doesn't instantly close it.
+  let _qrDismissable = false;
+  setTimeout(() => { _qrDismissable = true; }, 3000);
+  bar.addEventListener('click', () => {
+    if (!_qrDismissable) return;
+    bar.classList.add('hidden');
+    recalcScale();
+  });
 
   const url = (window.location.protocol === 'file:')
     ? 'https://final-omega-teal.vercel.app'
@@ -3256,7 +3264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!err) document.getElementById('qr-img').src = dataUrl;
     });
   };
-  s.onerror = () => bar.classList.add('hidden'); // hide if CDN unavailable
+  // Don't hide bar on CDN failure — gradient label is still useful.
   document.head.appendChild(s);
 })();
 </script>
