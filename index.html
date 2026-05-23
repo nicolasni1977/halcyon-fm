@@ -110,10 +110,9 @@ html, body {
   overflow: hidden;
 }
 /* Glossy glass reflection — sits above ALL LCD content (overlays, photos, menus).
-   pointer-events:none so it doesn't intercept taps. Three layered gradients:
+   pointer-events:none so it doesn't intercept taps. Two layered gradients:
    1) Diagonal sweep — primary specular highlight from upper-left
-   2) Top-edge soft highlight + bottom-edge shadow — room light from above
-   3) Corner vignette — convex glass curvature */
+   2) Top-edge soft highlight + bottom-edge shadow — room light from above */
 #screen-module::after {
   content: '';
   position: absolute;
@@ -137,11 +136,6 @@ html, body {
       rgba(255,255,255,0)    18%,
       rgba(255,255,255,0)    88%,
       rgba(0,0,0,0.10)       100%
-    ),
-    radial-gradient(
-      ellipse at center,
-      transparent 58%,
-      rgba(0,0,0,0.22) 100%
     );
 }
 #screen-inner {
