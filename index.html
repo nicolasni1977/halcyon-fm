@@ -2641,12 +2641,12 @@ class WheelEngine {
   }
 
   _getSector(angle) {
-    // Normalize to 0-360
+    // atan2 angle: 0° = right, 90° = bottom, 180° = left, 270° = top (screen Y flipped)
     const a = ((angle % 360) + 360) % 360;
-    if (a >= 315 || a < 45)  return 'MENU';
-    if (a >= 45  && a < 135) return 'NEXT';
-    if (a >= 135 && a < 225) return 'PLAY_PAUSE';
-    return 'PREV';
+    if (a >= 315 || a < 45)  return 'NEXT';        // RIGHT  → ▶▶❙
+    if (a >= 45  && a < 135) return 'PLAY_PAUSE';  // BOTTOM → ▶❙❙
+    if (a >= 135 && a < 225) return 'PREV';        // LEFT   → ❙◀◀
+    return 'MENU';                                  // TOP    → MENU label
   }
 
   _bindWheel() {
@@ -3410,7 +3410,7 @@ document.getElementById('wheel-outer').addEventListener('pointerdown', e => {
     return Math.atan2(dy, dx) * 180 / Math.PI;
   })();
   const a = ((angle % 360) + 360) % 360;
-  if (a >= 135 && a < 225) { // BOTTOM sector
+  if (a >= 45 && a < 135) { // BOTTOM sector (Play/Pause) — long-press powers off
     _playLongTimer = setTimeout(() => {
       _playLongFired = true;
       if (!appState.holdActive) dispatch('POWER_OFF');
