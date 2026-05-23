@@ -14,9 +14,7 @@ html, body {
   width: 100%; height: 100%;
   overflow: hidden;
   background: #FFFFFF;
-  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  gap: 14px;
-  padding-top: 20px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -27,8 +25,6 @@ html, body {
 #ipod-wrapper {
   position: relative;
   display: flex; align-items: center; justify-content: center;
-  margin-top: auto;
-  margin-bottom: auto;
 }
 #ipod-device {
   position: relative;
@@ -763,88 +759,58 @@ html, body {
 }
 
 /* ============================================================
-   13. QR CODE BAR — Silver metallic / Red Dot quality
+   13. QR CODE — Fixed corner stamp, desktop only
    ============================================================ */
 #qr-bar {
-  flex-shrink: 0;
-  width: 100%;
-  background: linear-gradient(180deg,
-    #ffffff 0%,
-    #f6f6f6 20%,
-    #ebebeb 50%,
-    #dcdcdc 78%,
-    #cccccc 100%
-  );
-  border-bottom: 1px solid #a0a0a0;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.98),
-    0 3px 8px rgba(0,0,0,0.16);
-  padding: 9px 20px;
-  display: flex; align-items: center; justify-content: center; gap: 14px;
-  box-sizing: border-box;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
   z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   cursor: pointer;
-  transition: opacity 280ms ease;
+  transition: opacity 400ms ease;
 }
-#qr-bar.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
+/* Hide on mobile — you can't scan from the device you're holding */
+@media (max-width: 768px) { #qr-bar { display: none !important; } }
+#qr-bar.hidden { opacity: 0; pointer-events: none; }
 #qr-card {
   background: #fff;
-  border-radius: 3px;
-  padding: 5px;
-  flex-shrink: 0;
-  border: 0.5px solid rgba(0,0,0,0.14);
-  box-shadow: 0 1px 5px rgba(0,0,0,0.13);
+  border-radius: 4px;
+  padding: 6px;
+  box-shadow:
+    0 2px 12px rgba(0,0,0,0.10),
+    0 1px 3px rgba(0,0,0,0.06),
+    0 0 0 0.5px rgba(0,0,0,0.08);
 }
 #qr-img {
   display: block;
-  width: 60px; height: 60px;
-  border-radius: 1px;
+  width: 72px; height: 72px;
   image-rendering: pixelated;
 }
 #qr-text {
-  display: flex; flex-direction: column; gap: 4px;
-  font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
-}
-#qr-label {
-  font-size: 12px; font-weight: 600;
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 8px;
+  color: #bbb;
   letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: #111;
-  display: flex; align-items: center; gap: 7px;
+  text-align: center;
 }
-#qr-dot {
-  display: inline-block;
-  width: 8px; height: 8px;
-  background: #cc0000;
-  border-radius: 50%;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 2px rgba(204,0,0,0.18);
-}
-#qr-dismiss {
-  font-size: 9px;
-  color: #888;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding-left: 15px;
-}
+#qr-label, #qr-dismiss, #qr-dot { display: none; }
 </style>
 </head>
 <body>
 
 <div id="aria-announce" aria-live="polite" aria-atomic="true"></div>
 
-<!-- Silver metallic QR bar — Red Dot design quality -->
-<div id="qr-bar" aria-label="Scan QR code to open Halcyon. Tap after 3 seconds to dismiss.">
+<!-- QR corner stamp — desktop only, hidden on mobile -->
+<div id="qr-bar" aria-label="Scan to open Halcyon on your phone.">
   <div id="qr-card">
-    <img id="qr-img" alt="" src="" width="60" height="60">
+    <img id="qr-img" alt="" src="" width="72" height="72">
   </div>
-  <div id="qr-text">
-    <div id="qr-label"><span id="qr-dot"></span>Halcyon</div>
-    <div id="qr-dismiss">Scan to open &nbsp;·&nbsp; Tap to dismiss</div>
-  </div>
+  <div id="qr-text">Open on phone</div>
 </div>
 
 <div id="ipod-wrapper">
@@ -3184,15 +3150,10 @@ document.getElementById('wheel-outer').addEventListener('pointercancel', () => {
 // Resize observer for scaling
 function recalcScale() {
   const wrapper = document.getElementById('ipod-wrapper');
-  const qrBar = document.getElementById('qr-bar');
-  const qrH = (qrBar && !qrBar.classList.contains('hidden'))
-    ? (qrBar.offsetHeight + 14) : 0; // 14 = flex gap
   const deviceH = 430, deviceW = 257;
   const vw = window.innerWidth;
-  // clientHeight excludes mobile browser chrome (address bar, nav bar) more reliably than innerHeight
   const vh = document.documentElement.clientHeight;
-  // 20 = body padding-top, 60 = bottom safe zone (mobile chrome + margin)
-  const maxH = vh - 20 - qrH - 60;
+  const maxH = vh - 40; // 20px top + 20px bottom breathing room
   const maxW = vw - 20;
   const scaleByH = maxH / deviceH;
   const scaleByW = maxW / deviceW;
@@ -3281,7 +3242,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Use a URL-based QR API — no JS library needed, works everywhere.
   const img = document.getElementById('qr-img');
   img.src = 'https://api.qrserver.com/v1/create-qr-code/'
-    + '?size=120x120&color=6366f1&bgcolor=ffffff&margin=4'
+    + '?size=144x144&color=000000&bgcolor=ffffff&margin=2'
     + '&data=' + encodeURIComponent(url);
   img.onerror = () => { img.style.display = 'none'; };
 })();
