@@ -508,12 +508,17 @@ html, body {
 #screen-now-playing .left-pane.np-left {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  width: auto;            /* override the generic .left-pane width:55% so it spans full width */
-  border-right: none;     /* and kill the inherited 1px divider that bisects the photo */
+  width: 100% !important;       /* override generic .left-pane width:55% — no half-width box */
+  border: none !important;      /* kill ALL inherited borders; was bisecting the photo */
   padding: 18px 10px 8px;
   background: none;
   z-index: 2;
   gap: 2px;
+}
+/* Belt-and-suspenders: any descendant of Now Playing inherits no border. */
+#screen-now-playing .left-pane,
+#screen-now-playing .right-pane {
+  border: none !important;
 }
 #screen-now-playing .np-title {
   color: #FFFFFF;
