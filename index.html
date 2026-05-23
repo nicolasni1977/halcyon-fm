@@ -1020,6 +1020,58 @@ html, body {
   gap:1px; overflow:hidden; background:#111;
 }
 .photo-thumb-grid img { width:100%; height:100%; object-fit:cover; display:block; }
+/* ---- Video browser / player ---- */
+#screen-video-browser { flex-direction: column; background: #0a0a0a; }
+#video-browser-list {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  background: #0a0a0a;
+}
+.video-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #1c1c1c;
+  cursor: pointer;
+  color: #fff;
+}
+.video-row.selected {
+  background: linear-gradient(180deg, #3A78D8 0%, #5A99F0 100%);
+}
+.video-thumb {
+  width: 64px; height: 36px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+  background: #222;
+}
+.video-meta { flex: 1; min-width: 0; }
+.video-title {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.video-channel {
+  font-size: 9px;
+  color: rgba(255,255,255,0.7);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.video-row.selected .video-channel { color: rgba(255,255,255,0.85); }
+
+#screen-video-player { background: #000; }
+#video-player-iframe {
+  width: 100%; height: 100%;
+  border: 0; display: block;
+  background: #000;
+}
+
 /* Magical zoom overlay — animates between thumbnail and full-screen photo view */
 #photo-zoom-overlay {
   position: absolute;
@@ -1215,6 +1267,25 @@ html, body {
           <div id="photo-view-caption"></div>
         </div>
 
+        <!-- VIDEO BROWSER state -->
+        <div id="screen-video-browser" class="screen-state">
+          <div class="status-bar">
+            <span class="status-label">Frontier AI</span>
+            <span class="status-play">&#9654;</span>
+            <div class="battery-pill"></div>
+          </div>
+          <div id="video-browser-list"></div>
+        </div>
+
+        <!-- VIDEO PLAYER state -->
+        <div id="screen-video-player" class="screen-state">
+          <iframe id="video-player-iframe"
+                  frameborder="0"
+                  referrerpolicy="strict-origin"
+                  allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                  allowfullscreen></iframe>
+        </div>
+
         <!-- Overlays (inside screen-inner) -->
         <div id="overlay-backlight"></div>
         <div id="overlay-volume">
@@ -1303,7 +1374,9 @@ const STATES = {
   SETTINGS: 'SETTINGS',
   PHOTO_BROWSER: 'PHOTO_BROWSER',
   PHOTO_VIEW: 'PHOTO_VIEW',
-  STOPWATCH: 'STOPWATCH'
+  STOPWATCH: 'STOPWATCH',
+  VIDEO_BROWSER: 'VIDEO_BROWSER',
+  VIDEO_PLAYER:  'VIDEO_PLAYER'
 };
 
 const LS_KEYS = {
@@ -1332,7 +1405,25 @@ const EXTRAS_SUBMENU = [
 ];
 
 // Stub submenus for the remaining main-menu entries
-const VIDEOS_SUBMENU   = ['Video Playlists','Movies','TV Shows','Music Videos','Video Podcasts','Rentals','Settings'];
+const VIDEOS_SUBMENU   = ['Frontier AI','Video Playlists','Movies','TV Shows','Music Videos','Video Podcasts','Rentals','Settings'];
+
+// Curated frontier-AI talks. Update this list to refresh the feed.
+// Format: { id: <YouTube video ID>, title, channel }
+// Thumbnails are fetched from https://i.ytimg.com/vi/<id>/mqdefault.jpg (no API key needed).
+// To make this dynamic later, replace this constant with a fetch+cache from a
+// serverless function that hits the YouTube Data API v3.
+const VIDEOS_FEED = [
+  { id:'kCc8FmEb1nY', title:"Let's build GPT: from scratch, in code, spelled out", channel:'Andrej Karpathy' },
+  { id:'zjkBMFhNj_g', title:'Intro to Large Language Models',                       channel:'Andrej Karpathy' },
+  { id:'l8pRSuU81PU', title:"Let's reproduce GPT-2 (124M)",                         channel:'Andrej Karpathy' },
+  { id:'7xTGNNLPyMI', title:'Deep Dive into LLMs like ChatGPT',                     channel:'Andrej Karpathy' },
+  { id:'aircAruvnKk', title:'But what is a neural network?',                        channel:'3Blue1Brown' },
+  { id:'IHZwWFHWa-w', title:'Gradient descent, how neural networks learn',          channel:'3Blue1Brown' },
+  { id:'Ilg3gGewQ5U', title:'What is backpropagation really doing?',                channel:'3Blue1Brown' },
+  { id:'tIeHLnjs5U8', title:'Backpropagation calculus',                             channel:'3Blue1Brown' },
+  { id:'wjZofJX0v4M', title:'But what is a GPT?',                                   channel:'3Blue1Brown' },
+  { id:'eMlx5fFNoYc', title:'Attention in transformers, visually explained',        channel:'3Blue1Brown' }
+];
 const PHOTOS_SUBMENU   = ['All Photos','Photo Library','Slideshow Settings'];
 const PODCASTS_SUBMENU = ['All Podcasts'];
 
@@ -2102,6 +2193,23 @@ function handleSelect(payload) {
     return;
   }
 
+  if (appState.state === STATES.VIDEO_BROWSER) {
+    // Pause the iPod's audio so it doesn't compete with the YouTube embed.
+    if (!audioEl.paused) audioEl.pause();
+    appState.menuStack.push({
+      items: [],
+      selectedIndex: appState._videoBrowserIdx || 0,
+      breadcrumb: 'Frontier AI'
+    });
+    appState.state = STATES.VIDEO_PLAYER;
+    ScreenRenderer.render();
+    return;
+  }
+  if (appState.state === STATES.VIDEO_PLAYER) {
+    // Tap center while watching: do nothing (iframe handles its own play/pause)
+    return;
+  }
+
   if (appState.state === STATES.PHOTO_VIEW) {
     const now = Date.now();
     if (appState._lastPhotoViewSelectAt && (now - appState._lastPhotoViewSelectAt) < 350) {
@@ -2209,6 +2317,27 @@ function handleMenu() {
       appState.currentMenu = MAIN_MENU_ITEMS;
       appState.selectedIndex = 0;
     }
+    return;
+  }
+
+  if (appState.state === STATES.VIDEO_PLAYER) {
+    // Stop the iframe by clearing src (otherwise audio keeps playing in background)
+    const f = document.getElementById('video-player-iframe');
+    if (f) f.src = '';
+    appState.menuStack.pop();
+    appState.state = STATES.VIDEO_BROWSER;
+    ScreenRenderer.render();
+    return;
+  }
+  if (appState.state === STATES.VIDEO_BROWSER) {
+    const prev = appState.menuStack.pop();
+    if (prev) {
+      appState.currentMenu = prev.items;
+      appState.selectedIndex = prev.selectedIndex;
+    }
+    appState.state = STATES.SUBMENU;
+    appState._submenuOwner = 'Videos';
+    ScreenRenderer.render();
     return;
   }
 
@@ -2347,6 +2476,13 @@ function handleScroll(dir) {
     const total = photos.length;
     appState._photoBrowserIdx = Math.max(0, Math.min(total - 1,
       (appState._photoBrowserIdx || 0) + dir));
+    ScreenRenderer.render();
+    AudioEngine.tick();
+    return;
+  } else if (appState.state === STATES.VIDEO_BROWSER) {
+    const total = VIDEOS_FEED.length;
+    const cur = appState._videoBrowserIdx || 0;
+    appState._videoBrowserIdx = Math.max(0, Math.min(total - 1, cur + dir));
     ScreenRenderer.render();
     AudioEngine.tick();
     return;
@@ -2716,9 +2852,26 @@ function navigateSubmenuSelect() {
     return;
   }
 
-  // ============== VIDEOS / PODCASTS stubs ==============
-  if (appState.state === STATES.SUBMENU &&
-      (appState._submenuOwner === 'Videos' || appState._submenuOwner === 'Podcasts')) {
+  // ============== VIDEOS submenu ==============
+  if (appState.state === STATES.SUBMENU && appState._submenuOwner === 'Videos') {
+    if (item === 'Frontier AI') {
+      appState.menuStack.push({
+        items: appState.currentMenu,
+        selectedIndex: appState.selectedIndex,
+        breadcrumb: 'Videos',
+        parentOwner: 'Videos'
+      });
+      appState.state = STATES.VIDEO_BROWSER;
+      appState._videoBrowserIdx = 0;
+      appState.selectedIndex = 0;
+      ScreenRenderer.render();
+      return;
+    }
+    showInfoScreen(item, 'No ' + item.toLowerCase() + ' synced.\nThis is a music-first build.');
+    return;
+  }
+  // ============== PODCASTS stub ==============
+  if (appState.state === STATES.SUBMENU && appState._submenuOwner === 'Podcasts') {
     showInfoScreen(item, 'No ' + item.toLowerCase() + ' synced.\nThis is a music-first build.');
     return;
   }
@@ -3511,7 +3664,9 @@ const ScreenRenderer = (() => {
     coverflow:    document.getElementById('screen-coverflow'),
     photoBrowser: document.getElementById('screen-photo-browser'),
     photoView:    document.getElementById('screen-photo-view'),
-    stopwatch:    document.getElementById('screen-stopwatch')
+    stopwatch:    document.getElementById('screen-stopwatch'),
+    videoBrowser: document.getElementById('screen-video-browser'),
+    videoPlayer:  document.getElementById('screen-video-player')
   };
 
   function render() {
@@ -3540,6 +3695,12 @@ const ScreenRenderer = (() => {
       case STATES.STOPWATCH:
                              renderStopwatch();
                              states.stopwatch.classList.add('active');  break;
+      case STATES.VIDEO_BROWSER:
+                             renderVideoBrowser();
+                             states.videoBrowser.classList.add('active'); break;
+      case STATES.VIDEO_PLAYER:
+                             renderVideoPlayer();
+                             states.videoPlayer.classList.add('active');  break;
     }
     updateStatusLabels();
     updatePlayIndicators();
@@ -3727,6 +3888,42 @@ const ScreenRenderer = (() => {
     document.getElementById('photo-view-img').src = photos[sel] || '';
     document.getElementById('photo-view-caption').textContent =
       (sel + 1) + ' of ' + photos.length;
+  }
+
+  function renderVideoBrowser() {
+    const list = document.getElementById('video-browser-list');
+    if (!list) return;
+    list.innerHTML = '';
+    const sel = appState._videoBrowserIdx || 0;
+    VIDEOS_FEED.forEach((v, i) => {
+      const row = document.createElement('div');
+      row.className = 'video-row' + (i === sel ? ' selected' : '');
+      const img = document.createElement('img');
+      img.className = 'video-thumb';
+      img.src = 'https://i.ytimg.com/vi/' + v.id + '/mqdefault.jpg';
+      img.alt = '';
+      img.loading = 'lazy';
+      const meta = document.createElement('div');
+      meta.className = 'video-meta';
+      const t = document.createElement('div'); t.className = 'video-title';   t.textContent = v.title;
+      const c = document.createElement('div'); c.className = 'video-channel'; c.textContent = v.channel;
+      meta.appendChild(t); meta.appendChild(c);
+      row.appendChild(img); row.appendChild(meta);
+      list.appendChild(row);
+    });
+    // Keep selected row in view
+    const sr = list.querySelector('.video-row.selected');
+    if (sr && sr.scrollIntoView) sr.scrollIntoView({ block: 'nearest' });
+  }
+
+  function renderVideoPlayer() {
+    const f = document.getElementById('video-player-iframe');
+    if (!f) return;
+    const v = VIDEOS_FEED[appState._videoBrowserIdx || 0];
+    if (!v) return;
+    // Setting src triggers playback. autoplay+playsinline so it works on mobile.
+    f.src = 'https://www.youtube.com/embed/' + v.id +
+            '?autoplay=1&playsinline=1&rel=0&modestbranding=1';
   }
 
   function renderPhotoThumbnailGrid(container, offset) {
