@@ -14,7 +14,8 @@ html, body {
   width: 100%; height: 100%;
   overflow: hidden;
   background: #FFFFFF;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -762,9 +763,7 @@ html, body {
    13. APPLE-STYLE QR CODE BAR
    ============================================================ */
 #qr-bar {
-  position: fixed;
-  top: 14px; left: 50%;
-  transform: translateX(-50%);
+  flex-shrink: 0;
   z-index: 9999;
   cursor: pointer;
   transition: opacity 280ms ease, transform 280ms ease;
@@ -772,7 +771,7 @@ html, body {
 #qr-bar.hidden {
   opacity: 0;
   pointer-events: none;
-  transform: translateX(-50%) translateY(-10px);
+  transform: translateY(-8px);
 }
 #qr-card {
   background: #ffffff;
@@ -3152,17 +3151,18 @@ document.getElementById('wheel-outer').addEventListener('pointercancel', () => {
 // Resize observer for scaling
 function recalcScale() {
   const wrapper = document.getElementById('ipod-wrapper');
+  const qrBar = document.getElementById('qr-bar');
+  const qrH = (qrBar && !qrBar.classList.contains('hidden'))
+    ? (qrBar.offsetHeight + 14) : 0; // 14 = flex gap
   const deviceH = 430, deviceW = 257;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const maxH = vh - 40;
+  const maxH = vh - 40 - qrH;
   const maxW = vw - 20;
-  // Fit device in viewport
   const scaleByH = maxH / deviceH;
   const scaleByW = maxW / deviceW;
-  const scale = Math.min(scaleByH, scaleByW, 1.8); // cap at 1.8x
+  const scale = Math.min(scaleByH, scaleByW, 1.8);
   wrapper.style.transform = `scale(${scale})`;
-  // Adjust wrapper natural size so flexbox centering still works
   wrapper.style.width  = deviceW + 'px';
   wrapper.style.height = deviceH + 'px';
 }
@@ -3229,7 +3229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ============================================================
 (function() {
   const bar = document.getElementById('qr-bar');
-  bar.addEventListener('click', () => bar.classList.add('hidden'));
+  bar.addEventListener('click', () => { bar.classList.add('hidden'); recalcScale(); });
 
   const url = (window.location.protocol === 'file:')
     ? 'https://final-omega-teal.vercel.app'
