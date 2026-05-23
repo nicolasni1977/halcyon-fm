@@ -1361,6 +1361,23 @@ html, body {
           </div>
         </div>
 
+        <!-- SLIDESHOW SETTINGS state -->
+        <div id="screen-slideshow-settings" class="screen-state">
+          <div class="status-bar">
+            <span class="status-label">Slideshow Settings</span>
+            <span class="status-play">&#9654;</span>
+            <div class="battery-pill"></div>
+          </div>
+          <div class="split-pane">
+            <div class="left-pane">
+              <div class="menu-list" id="slideshow-settings-list"></div>
+            </div>
+            <div class="right-pane">
+              <div class="settings-icon">&#9656;</div>
+            </div>
+          </div>
+        </div>
+
         <!-- COVER FLOW state -->
         <div id="screen-coverflow">
           <div id="coverflow-stage"></div>
@@ -1538,7 +1555,8 @@ const STATES = {
   VIDEO_BROWSER: 'VIDEO_BROWSER',
   VIDEO_PLAYER:  'VIDEO_PLAYER',
   PODCAST_BROWSER: 'PODCAST_BROWSER',
-  PODCAST_PLAYER:  'PODCAST_PLAYER'
+  PODCAST_PLAYER:  'PODCAST_PLAYER',
+  SLIDESHOW_SETTINGS: 'SLIDESHOW_SETTINGS'
 };
 
 const LS_KEYS = {
@@ -1546,7 +1564,8 @@ const LS_KEYS = {
   LIBRARY_META: 'halcyon-library-meta',
   PLAYLISTS:    'halcyon-playlists',
   RATINGS:      'halcyon-ratings',
-  PLAYCOUNTS:   'halcyon-playcounts'
+  PLAYCOUNTS:   'halcyon-playcounts',
+  SLIDESHOW_SETTINGS: 'halcyon-slideshow-settings'
 };
 
 const MAIN_MENU_ITEMS = [
@@ -1603,6 +1622,26 @@ const SETTINGS_ITEMS = [
   { label:'Language',      key:'language',      values:['English','Français','Deutsch','Español','Italiano','日本語','한국어','中文'] },
   { label:'Reset Settings',key:'__reset__',     values:[] }
 ];
+
+const SLIDESHOW_SETTINGS_ITEMS = [
+  { label:'Time Per Slide', key:'timePerSlide', values:['2s','3s','5s','10s','15s','20s'] },
+  { label:'Repeat',         key:'repeat',       values:['Off','On'] },
+  { label:'Shuffle Photos', key:'shuffle',      values:['Off','On'] },
+  { label:'Transitions',    key:'transitions',  values:['Off','Dissolve','Fade'] },
+  { label:'TV Out',         key:'tvOut',        values:['Ask','Off'] },
+  { label:'TV Signal',      key:'tvSignal',     values:['NTSC','PAL'] }
+];
+
+function defaultSlideshowSettings() {
+  return {
+    timePerSlide: '3s',
+    repeat: 'Off',
+    shuffle: 'Off',
+    transitions: 'Dissolve',
+    tvOut: 'Ask',
+    tvSignal: 'NTSC'
+  };
+}
 
 const TICK_DEGREES = 12;
 const LONG_PRESS_CENTER = 600;
@@ -2102,6 +2141,7 @@ const appState = {
   stopwatch: { running: false, elapsed: 0, startedAt: 0, laps: [], _raf: null },
   contextSelectedIndex: 0,
   settings: defaultSettings(),
+  slideshowSettings: defaultSlideshowSettings(),
   library: [],        // array of full track objects from IDB
   ratings: {},
   playcounts: {},
@@ -2119,6 +2159,13 @@ function loadPersisted() {
   try {
     const s = localStorage.getItem(LS_KEYS.SETTINGS);
     if (s) appState.settings = Object.assign(defaultSettings(), JSON.parse(s));
+  } catch(e) {}
+  try {
+    const ss = localStorage.getItem(LS_KEYS.SLIDESHOW_SETTINGS);
+    if (ss) {
+      const parsed = JSON.parse(ss);
+      appState.slideshowSettings = Object.assign(defaultSlideshowSettings(), parsed);
+    }
   } catch(e) {}
   try {
     const r = localStorage.getItem(LS_KEYS.RATINGS);
@@ -2141,6 +2188,10 @@ function loadPersisted() {
 
 function saveSettings() {
   localStorage.setItem(LS_KEYS.SETTINGS, JSON.stringify(appState.settings));
+}
+
+function saveSlideshowSettings() {
+  localStorage.setItem(LS_KEYS.SLIDESHOW_SETTINGS, JSON.stringify(appState.slideshowSettings));
 }
 
 function savePlaylists() {
@@ -2384,6 +2435,11 @@ function handleSelect(payload) {
     return;
   }
 
+  if (appState.state === STATES.SLIDESHOW_SETTINGS) {
+    cycleSlideshowSetting(appState.selectedIndex);
+    return;
+  }
+
   if (appState.state === STATES.SUBMENU) {
     navigateSubmenuSelect();
     return;
@@ -2582,6 +2638,19 @@ function handleMenu() {
     return;
   }
 
+  if (appState.state === STATES.SLIDESHOW_SETTINGS) {
+    // Pop the frame we pushed when entering and return to the Photos submenu.
+    const prev = appState.menuStack.pop();
+    if (prev) {
+      appState.currentMenu = prev.items;
+      appState.selectedIndex = prev.selectedIndex;
+    }
+    appState.state = STATES.SUBMENU;
+    appState._submenuOwner = 'Photos';
+    ScreenRenderer.render();
+    return;
+  }
+
   if (appState.state === STATES.SUBMENU) {
     // Clear lingering browse flags before unwinding so the previous level dispatches correctly.
     appState._browseTracklist = null;
@@ -2684,6 +2753,7 @@ function handleScroll(dir) {
   if (appState.state === STATES.MAIN_MENU) list = MAIN_MENU_ITEMS;
   else if (appState.state === STATES.SUBMENU) list = appState.currentMenu;
   else if (appState.state === STATES.SETTINGS) list = SETTINGS_ITEMS;
+  else if (appState.state === STATES.SLIDESHOW_SETTINGS) list = SLIDESHOW_SETTINGS_ITEMS;
   else if (appState.state === STATES.NOW_PLAYING) {
     const mode = appState.centerButtonMode || 'default';
     if (mode === 'scrubber') {
@@ -2796,6 +2866,18 @@ function handleCycleSetting(idx) {
   // Apply repeat/shuffle to appState mirrors
   if (setting.key === 'repeat')  appState.repeatMode  = vals[ni];
   if (setting.key === 'shuffle') appState.shuffleMode = vals[ni];
+}
+
+function cycleSlideshowSetting(idx) {
+  const setting = SLIDESHOW_SETTINGS_ITEMS[idx];
+  if (!setting || !setting.values || !setting.values.length) return;
+  const cur = appState.slideshowSettings[setting.key] || setting.values[0];
+  const ci = setting.values.indexOf(cur);
+  const next = setting.values[(ci + 1) % setting.values.length];
+  appState.slideshowSettings[setting.key] = next;
+  saveSlideshowSettings();
+  ScreenRenderer.render();
+  AudioEngine && AudioEngine.confirm && AudioEngine.confirm();
 }
 
 function handleContextSelect(idx) {
@@ -3082,9 +3164,16 @@ function navigateSubmenuSelect() {
       appState._submenuOwner = 'PhotoAlbums';
       appState.selectedIndex = 0;
       ScreenRenderer.render();
-    } else {
-      showInfoScreen('Slideshow Settings',
-        'Time Per Slide: 3s\nRepeat: Off\nShuffle: Off\nTransitions: Dissolve\nTV Out: Ask\nTV Signal: NTSC');
+    } else if (item === 'Slideshow Settings') {
+      appState.menuStack.push({
+        items: appState.currentMenu,
+        selectedIndex: appState.selectedIndex,
+        breadcrumb: 'Photos',
+        parentOwner: 'Photos'
+      });
+      appState.state = STATES.SLIDESHOW_SETTINGS;
+      appState.selectedIndex = 0;
+      ScreenRenderer.render();
     }
     return;
   }
@@ -4041,7 +4130,8 @@ const ScreenRenderer = (() => {
     videoBrowser: document.getElementById('screen-video-browser'),
     videoPlayer:  document.getElementById('screen-video-player'),
     podcastBrowser: document.getElementById('screen-podcast-browser'),
-    podcastPlayer:  document.getElementById('screen-podcast-player')
+    podcastPlayer:  document.getElementById('screen-podcast-player'),
+    slideshowSettings: document.getElementById('screen-slideshow-settings')
   };
 
   function render() {
@@ -4082,6 +4172,9 @@ const ScreenRenderer = (() => {
       case STATES.PODCAST_PLAYER:
                              renderPodcastPlayer();
                              states.podcastPlayer.classList.add('active'); break;
+      case STATES.SLIDESHOW_SETTINGS:
+                             renderSlideshowSettings();
+                             states.slideshowSettings.classList.add('active'); break;
     }
     updateStatusLabels();
     updatePlayIndicators();
@@ -4199,6 +4292,17 @@ const ScreenRenderer = (() => {
     }
   }
 
+  function renderSlideshowSettings() {
+    const list = document.getElementById('slideshow-settings-list');
+    if (!list) return;
+    list.innerHTML = '';
+    SLIDESHOW_SETTINGS_ITEMS.forEach((item, i) => {
+      const val = appState.slideshowSettings[item.key] || (item.values && item.values[0]) || '-';
+      const row = createMenuRow(item.label, i === appState.selectedIndex, val);
+      list.appendChild(row);
+    });
+  }
+
   function createMenuRow(text, selected, value, subtitle) {
     const row = document.createElement('div');
     row.className = 'menu-row' + (selected ? ' selected' : '');
@@ -4276,17 +4380,30 @@ const ScreenRenderer = (() => {
     document.getElementById('photo-view-caption').textContent =
       (sel + 1) + ' of ' + photos.length;
 
-    // Slideshow auto-advance per the "Time Per Slide" setting.
-    // Each render schedules the next tick; manual scroll re-renders and resets.
+    // Slideshow auto-advance per the Slideshow Settings page.
+    // Time Per Slide, Repeat, and Shuffle Photos are all honored.
     if (appState._slideshowTimer) clearTimeout(appState._slideshowTimer);
     const total = photos.length;
+    const ss = appState.slideshowSettings || {};
+    const sec = parseInt(String(ss.timePerSlide || '3').replace(/\D+/g,''), 10) || 3;
     if (total > 1) {
       appState._slideshowTimer = setTimeout(() => {
         appState._slideshowTimer = null;
         if (appState.state !== STATES.PHOTO_VIEW) return;
-        appState._photoBrowserIdx = ((appState._photoBrowserIdx || 0) + 1) % total;
+        const cur = appState._photoBrowserIdx || 0;
+        let nextIdx;
+        if (ss.shuffle === 'On') {
+          nextIdx = Math.floor(Math.random() * total);
+          if (nextIdx === cur && total > 1) nextIdx = (nextIdx + 1) % total;
+        } else if (cur + 1 >= total) {
+          if (ss.repeat === 'On') nextIdx = 0;
+          else return;   // stop at end
+        } else {
+          nextIdx = cur + 1;
+        }
+        appState._photoBrowserIdx = nextIdx;
         ScreenRenderer.render();   // re-renders + reschedules the next tick
-      }, (appState._slideshowSec || 3) * 1000);
+      }, sec * 1000);
     }
   }
 
