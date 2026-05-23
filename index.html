@@ -1038,6 +1038,17 @@ html, body {
 }
 .video-row.selected {
   background: linear-gradient(180deg, #3A78D8 0%, #5A99F0 100%);
+  box-shadow: inset 4px 0 0 #fff;
+}
+.video-row.selected .video-title { color: #fff; }
+.video-row.selected::after {
+  content: '\203A';                /* › chevron — confirms row is the active target */
+  margin-left: auto;
+  padding-right: 6px;
+  font-size: 16px;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1;
 }
 .video-thumb {
   width: 64px; height: 36px;
@@ -3911,9 +3922,14 @@ const ScreenRenderer = (() => {
       row.appendChild(img); row.appendChild(meta);
       list.appendChild(row);
     });
-    // Keep selected row in view
+    // Always center the selected row in the visible list (scrollIntoView's
+    // 'nearest' doesn't scroll until the row is fully off-screen, which makes
+    // the wheel feel dead on the first few ticks).
     const sr = list.querySelector('.video-row.selected');
-    if (sr && sr.scrollIntoView) sr.scrollIntoView({ block: 'nearest' });
+    if (sr) {
+      const target = sr.offsetTop - (list.clientHeight / 2) + (sr.offsetHeight / 2);
+      list.scrollTop = Math.max(0, target);
+    }
   }
 
   function renderVideoPlayer() {
