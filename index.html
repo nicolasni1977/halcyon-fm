@@ -807,14 +807,32 @@ html, body {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
-  overflow: hidden;
+  overflow: visible;   /* let sel cell spring above siblings */
   background: #111;
 }
-.photo-thumb-cell { position: relative; overflow: hidden; }
+.photo-thumb-cell {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  /* shrink-back: smooth ease-out */
+  transition: transform 220ms cubic-bezier(0.0, 0.0, 0.2, 1),
+              opacity   180ms ease,
+              z-index   0ms   220ms;
+}
 .photo-thumb-cell img { width:100%; height:100%; object-fit:cover; display:block; }
-.photo-thumb-cell.sel::after {
-  content:''; position:absolute; inset:0;
-  border: 2px solid #fff; pointer-events:none;
+/* selected cell: spring pop (slight overshoot → settles) */
+.photo-thumb-cell.sel {
+  transform: scale(1.72);
+  z-index: 20;
+  overflow: visible;
+  transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity   180ms ease,
+              z-index   0ms;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.72);
+}
+/* dim every non-selected cell while a selection exists */
+#photo-grid:has(.sel) .photo-thumb-cell:not(.sel) {
+  opacity: 0.45;
 }
 /* Photo full view */
 #screen-photo-view { background:#000; flex-direction:column; }
@@ -2948,8 +2966,14 @@ const ScreenRenderer = (() => {
     grid.innerHTML = '';
     for (let i = 0; i < pageSize && (start + i) < photos.length; i++) {
       const idx = start + i;
+      const row = Math.floor(i / cols);
+      const col = i % cols;
       const cell = document.createElement('div');
       cell.className = 'photo-thumb-cell' + (idx === sel ? ' sel' : '');
+      // Scale from the edge nearest the screen border so the pop stays on-screen
+      const ox = col === 0 ? 'left' : col === cols - 1 ? 'right' : 'center';
+      const oy = row === 0 ? 'top'  : row === rows - 1 ? 'bottom': 'center';
+      cell.style.transformOrigin = `${ox} ${oy}`;
       const img = document.createElement('img');
       img.src = photos[idx]; img.alt = ''; img.loading = 'lazy';
       cell.appendChild(img);
