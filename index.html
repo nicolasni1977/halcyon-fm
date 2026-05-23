@@ -1994,9 +1994,8 @@ function handleMenu() {
       appState.selectedIndex = prev.selectedIndex;
     }
     appState.state = STATES.SUBMENU;
-    // If we drilled in from "Photo Library", go back to the album list;
-    // otherwise back to the top-level Photos submenu.
-    appState._submenuOwner = (prev && prev.breadcrumb === 'Photo Library') ? 'PhotoAlbums' : 'Photos';
+    // parentOwner on the popped frame tells us which submenu we were in when we drilled in.
+    appState._submenuOwner = (prev && prev.parentOwner !== undefined) ? prev.parentOwner : 'Photos';
     ScreenRenderer.render();
     return;
   }
@@ -2030,21 +2029,23 @@ function handleMenu() {
   }
 
   if (appState.state === STATES.SUBMENU) {
-    // Clear lingering browse / submenu-owner flags before unwinding so the
-    // previous level dispatches correctly.
+    // Clear lingering browse flags before unwinding so the previous level dispatches correctly.
     appState._browseTracklist = null;
     appState._browseArtists   = null;
     appState._browseAlbums    = null;
     appState._browseGenres    = null;
     appState._browseComposers = null;
-    appState._submenuOwner    = null;
 
     if (appState.menuStack.length > 0) {
       const prev = appState.menuStack.pop();
       appState.currentMenu = prev.items;
       appState.selectedIndex = prev.selectedIndex;
+      // Restore the submenu owner from the frame (set when we drilled in).
+      // If the frame didn't capture one, default to null (top-level submenu).
+      appState._submenuOwner = (prev.parentOwner !== undefined) ? prev.parentOwner : null;
       appState.state = (appState.menuStack.length > 0) ? STATES.SUBMENU : STATES.MAIN_MENU;
     } else {
+      appState._submenuOwner = null;
       appState.state = STATES.MAIN_MENU;
       appState.currentMenu = MAIN_MENU_ITEMS;
       appState.selectedIndex = 0;
@@ -2461,7 +2462,7 @@ function navigateSubmenuSelect() {
   // ============== PHOTOS submenu ==============
   if (appState.state === STATES.SUBMENU && appState._submenuOwner === 'Photos') {
     if (item === 'All Photos') {
-      appState.menuStack.push({ items: appState.currentMenu, selectedIndex: appState.selectedIndex, breadcrumb: 'Photos' });
+      appState.menuStack.push({ items: appState.currentMenu, selectedIndex: appState.selectedIndex, breadcrumb: 'Photos', parentOwner: 'Photos' });
       appState.state = STATES.PHOTO_BROWSER;
       appState._photoBrowserIdx = 0;
       appState._photoBrowserTitle = 'All Photos';
@@ -2470,7 +2471,8 @@ function navigateSubmenuSelect() {
       ScreenRenderer.render();
     } else if (item === 'Photo Library') {
       // Drill into a folder list; user picks a folder, then enters PHOTO_BROWSER.
-      appState.menuStack.push({ items: appState.currentMenu, selectedIndex: appState.selectedIndex, breadcrumb: 'Photos' });
+      // parentOwner remembers we came from the Photos submenu so MENU restores it.
+      appState.menuStack.push({ items: appState.currentMenu, selectedIndex: appState.selectedIndex, breadcrumb: 'Photos', parentOwner: 'Photos' });
       appState.currentMenu = PHOTO_ALBUMS.map(a => a.name + ' (' + a.photos.length + ')');
       appState._submenuOwner = 'PhotoAlbums';
       appState.selectedIndex = 0;
@@ -2488,7 +2490,8 @@ function navigateSubmenuSelect() {
     const baseName = item.replace(/\s*\(\d+\)\s*$/, '');
     const album = PHOTO_ALBUMS.find(a => a.name === baseName);
     if (album) {
-      appState.menuStack.push({ items: appState.currentMenu, selectedIndex: appState.selectedIndex, breadcrumb: 'Photo Library' });
+      // parentOwner='PhotoAlbums' tells the PHOTO_BROWSER MENU handler to restore the album list.
+      appState.menuStack.push({ items: appState.currentMenu, selectedIndex: appState.selectedIndex, breadcrumb: 'Photo Library', parentOwner: 'PhotoAlbums' });
       appState.state = STATES.PHOTO_BROWSER;
       appState._photoBrowserIdx = 0;
       appState._photoBrowserTitle = album.name;
