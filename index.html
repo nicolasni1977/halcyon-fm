@@ -1938,6 +1938,22 @@ function handleSelect(payload) {
     return;
   }
 
+  if (appState.state === STATES.PHOTO_BROWSER) {
+    enterPhotoViewWithZoom();
+    return;
+  }
+
+  if (appState.state === STATES.PHOTO_VIEW) {
+    const now = Date.now();
+    if (appState._lastPhotoViewSelectAt && (now - appState._lastPhotoViewSelectAt) < 350) {
+      appState._lastPhotoViewSelectAt = 0;
+      exitPhotoViewWithZoom();
+    } else {
+      appState._lastPhotoViewSelectAt = now;
+    }
+    return;
+  }
+
   if (appState.state === STATES.NOW_PLAYING) {
     cycleCenterButtonMode();
     return;
@@ -2479,24 +2495,6 @@ function navigateSubmenuSelect() {
       appState._photoBrowserPhotos = album.photos;
       appState.selectedIndex = 0;
       ScreenRenderer.render();
-    }
-    return;
-  }
-
-  // ============== PHOTO BROWSER — single-click zooms into full view ==============
-  if (appState.state === STATES.PHOTO_BROWSER) {
-    enterPhotoViewWithZoom();
-    return;
-  }
-
-  // ============== PHOTO VIEW — double-click zooms back to browser ==============
-  if (appState.state === STATES.PHOTO_VIEW) {
-    const now = Date.now();
-    if (appState._lastPhotoViewSelectAt && (now - appState._lastPhotoViewSelectAt) < 350) {
-      appState._lastPhotoViewSelectAt = 0;
-      exitPhotoViewWithZoom();
-    } else {
-      appState._lastPhotoViewSelectAt = now;
     }
     return;
   }
