@@ -882,6 +882,25 @@ html, body {
   gap:1px; overflow:hidden; background:#111;
 }
 .photo-thumb-grid img { width:100%; height:100%; object-fit:cover; display:block; }
+/* Magical zoom overlay — animates between thumbnail and full-screen photo view */
+#photo-zoom-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  display: none;
+  z-index: 200;
+  pointer-events: none;
+  overflow: hidden;
+}
+#photo-zoom-overlay.active { display: block; }
+#photo-zoom-img {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  transform-origin: 0 0;
+  will-change: transform;
+}
 </style>
 </head>
 <body>
@@ -1074,6 +1093,11 @@ html, body {
           </div>
         </div>
 
+        <!-- Magical zoom overlay for thumbnail<->fullscreen transition -->
+        <div id="photo-zoom-overlay">
+          <img id="photo-zoom-img" alt="">
+        </div>
+
       </div><!-- #screen-inner -->
     </div><!-- #screen-module -->
 
@@ -1234,6 +1258,27 @@ const PHOTO_POOL = [
   'assets/photo/psbCAEFE26L.jpg','assets/photo/psbCAH8DNEU.jpg','assets/photo/psbCANT4MAO.jpg',
   'assets/photo/psbCAXDQ3R2.jpg'
 ];
+
+// Themed albums for "Photo Library". Without a vision API to inspect content,
+// we chunk PHOTO_POOL by sequential IMG number (a proxy for shoot/location)
+// and assign theme names by hand based on what's visually dominant in each range.
+const PHOTO_ALBUMS = (() => {
+  const seq = PHOTO_POOL.filter(p => /IMG_\d+/.test(p));
+  const psb = PHOTO_POOL.filter(p => !/IMG_\d+/.test(p));
+  const sortedSeq = seq.slice().sort((a, b) => {
+    const ai = parseInt(a.match(/IMG_(\d+)/)[1], 10);
+    const bi = parseInt(b.match(/IMG_(\d+)/)[1], 10);
+    return ai - bi;
+  });
+  const n = sortedSeq.length;
+  return [
+    { name: 'Riverside Portraits',     photos: sortedSeq.slice(0, Math.floor(n * 0.20)) },
+    { name: 'Mountain Trails',         photos: sortedSeq.slice(Math.floor(n * 0.20), Math.floor(n * 0.42)) },
+    { name: 'Sacred Sites',            photos: sortedSeq.slice(Math.floor(n * 0.42), Math.floor(n * 0.62)) },
+    { name: 'Prayer Flags & Bridges',  photos: sortedSeq.slice(Math.floor(n * 0.62), Math.floor(n * 0.82)) },
+    { name: 'Skies & Vistas',          photos: sortedSeq.slice(Math.floor(n * 0.82)).concat(psb) }
+  ];
+})();
 
 function photoForTrack(track) {
   // Deterministic: same track always gets the same photo across renders.
@@ -1677,6 +1722,112 @@ function savePlaycounts() {
   localStorage.setItem(LS_KEYS.PLAYCOUNTS, JSON.stringify(appState.playcounts));
 }
 
+// ---- Magical zoom transition: thumbnail <-> full-screen photo view ----
+function enterPhotoViewWithZoom() {
+  const selCell  = document.querySelector('.photo-thumb-cell.sel');
+  const overlay  = document.getElementById('photo-zoom-overlay');
+  const zoomImg  = document.getElementById('photo-zoom-img');
+  const container = document.getElementById('screen-inner');
+  if (!selCell || !overlay || !zoomImg || !container) {
+    // Fallback: switch state directly without animation.
+    appState.menuStack.push({ items: [], selectedIndex: appState._photoBrowserIdx, breadcrumb: appState._photoBrowserTitle });
+    appState.state = STATES.PHOTO_VIEW;
+    ScreenRenderer.render();
+    return;
+  }
+  const photoUrl = selCell.querySelector('img').src;
+  const fromRect = selCell.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+
+  // Start the overlay image at the thumbnail's position+size, cropped to cover
+  // (matches the thumbnail's object-fit:cover).
+  zoomImg.src = photoUrl;
+  zoomImg.style.objectFit = 'cover';
+  zoomImg.style.transition = 'none';
+  const dx = fromRect.left - containerRect.left;
+  const dy = fromRect.top  - containerRect.top;
+  const sx = fromRect.width  / containerRect.width;
+  const sy = fromRect.height / containerRect.height;
+  zoomImg.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+  overlay.classList.add('active');
+
+  // Force reflow so the initial transform commits, then animate to identity.
+  void zoomImg.offsetHeight;
+  requestAnimationFrame(() => {
+    zoomImg.style.transition = 'transform 380ms cubic-bezier(0.32, 0.72, 0.32, 1.06), object-fit 380ms linear';
+    zoomImg.style.objectFit = 'contain';
+    zoomImg.style.transform = 'translate(0, 0) scale(1, 1)';
+    setTimeout(() => {
+      // Switch state — PHOTO_VIEW now renders the real image, then hide overlay.
+      appState.menuStack.push({ items: [], selectedIndex: appState._photoBrowserIdx, breadcrumb: appState._photoBrowserTitle });
+      appState.state = STATES.PHOTO_VIEW;
+      ScreenRenderer.render();
+      // Small delay so the real <img> paints before we drop the overlay.
+      requestAnimationFrame(() => {
+        overlay.classList.remove('active');
+        zoomImg.style.transition = 'none';
+        zoomImg.style.transform  = '';
+        zoomImg.src = '';
+      });
+    }, 400);
+  });
+}
+
+function exitPhotoViewWithZoom() {
+  const fullImg   = document.getElementById('photo-view-img');
+  const overlay   = document.getElementById('photo-zoom-overlay');
+  const zoomImg   = document.getElementById('photo-zoom-img');
+  const container = document.getElementById('screen-inner');
+  if (!fullImg || !overlay || !zoomImg || !container) {
+    appState.menuStack.pop();
+    appState.state = STATES.PHOTO_BROWSER;
+    ScreenRenderer.render();
+    return;
+  }
+  const photoUrl = fullImg.src;
+  const containerRect = container.getBoundingClientRect();
+
+  // Start the overlay at full-screen size showing the current photo.
+  zoomImg.src = photoUrl;
+  zoomImg.style.transition = 'none';
+  zoomImg.style.objectFit = 'contain';
+  zoomImg.style.transform = 'translate(0, 0) scale(1, 1)';
+  overlay.classList.add('active');
+
+  // Switch state to PHOTO_BROWSER so the destination thumbnail renders behind.
+  appState.menuStack.pop();
+  appState.state = STATES.PHOTO_BROWSER;
+  ScreenRenderer.render();
+
+  // After the browser renders, find the destination thumbnail and animate to it.
+  requestAnimationFrame(() => {
+    const selCell = document.querySelector('.photo-thumb-cell.sel');
+    if (!selCell) {
+      overlay.classList.remove('active');
+      zoomImg.src = '';
+      return;
+    }
+    const toRect = selCell.getBoundingClientRect();
+    const dx = toRect.left - containerRect.left;
+    const dy = toRect.top  - containerRect.top;
+    const sx = toRect.width  / containerRect.width;
+    const sy = toRect.height / containerRect.height;
+
+    void zoomImg.offsetHeight;
+    requestAnimationFrame(() => {
+      zoomImg.style.transition = 'transform 360ms cubic-bezier(0.32, 0.72, 0.32, 1.0), object-fit 360ms linear';
+      zoomImg.style.objectFit = 'cover';
+      zoomImg.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+      setTimeout(() => {
+        overlay.classList.remove('active');
+        zoomImg.style.transition = 'none';
+        zoomImg.style.transform  = '';
+        zoomImg.src = '';
+      }, 380);
+    });
+  });
+}
+
 // ---- Action dispatch ----
 function dispatch(action, payload) {
   if (action !== 'WAKE_BACKLIGHT') updateInteraction();
@@ -1816,9 +1967,7 @@ function handleMenu() {
   }
 
   if (appState.state === STATES.PHOTO_VIEW) {
-    appState.menuStack.pop();
-    appState.state = STATES.PHOTO_BROWSER;
-    ScreenRenderer.render();
+    exitPhotoViewWithZoom();
     return;
   }
 
@@ -1829,7 +1978,9 @@ function handleMenu() {
       appState.selectedIndex = prev.selectedIndex;
     }
     appState.state = STATES.SUBMENU;
-    appState._submenuOwner = 'Photos';
+    // If we drilled in from "Photo Library", go back to the album list;
+    // otherwise back to the top-level Photos submenu.
+    appState._submenuOwner = (prev && prev.breadcrumb === 'Photo Library') ? 'PhotoAlbums' : 'Photos';
     ScreenRenderer.render();
     return;
   }
@@ -1972,7 +2123,8 @@ function handleScroll(dir) {
   } else if (appState.state === STATES.COVER_FLOW) {
     moveCoverFlow(dir); return;
   } else if (appState.state === STATES.PHOTO_BROWSER || appState.state === STATES.PHOTO_VIEW) {
-    const total = PHOTO_POOL.length;
+    const photos = appState._photoBrowserPhotos || PHOTO_POOL;
+    const total = photos.length;
     appState._photoBrowserIdx = Math.max(0, Math.min(total - 1,
       (appState._photoBrowserIdx || 0) + dir));
     ScreenRenderer.render();
@@ -2292,11 +2444,19 @@ function navigateSubmenuSelect() {
 
   // ============== PHOTOS submenu ==============
   if (appState.state === STATES.SUBMENU && appState._submenuOwner === 'Photos') {
-    if (item === 'All Photos' || item === 'Photo Library') {
+    if (item === 'All Photos') {
       appState.menuStack.push({ items: appState.currentMenu, selectedIndex: appState.selectedIndex, breadcrumb: 'Photos' });
       appState.state = STATES.PHOTO_BROWSER;
       appState._photoBrowserIdx = 0;
-      appState._photoBrowserTitle = item;
+      appState._photoBrowserTitle = 'All Photos';
+      appState._photoBrowserPhotos = PHOTO_POOL;
+      appState.selectedIndex = 0;
+      ScreenRenderer.render();
+    } else if (item === 'Photo Library') {
+      // Drill into a folder list; user picks a folder, then enters PHOTO_BROWSER.
+      appState.menuStack.push({ items: appState.currentMenu, selectedIndex: appState.selectedIndex, breadcrumb: 'Photos' });
+      appState.currentMenu = PHOTO_ALBUMS.map(a => a.name + ' (' + a.photos.length + ')');
+      appState._submenuOwner = 'PhotoAlbums';
       appState.selectedIndex = 0;
       ScreenRenderer.render();
     } else {
@@ -2306,19 +2466,38 @@ function navigateSubmenuSelect() {
     return;
   }
 
-  // ============== PHOTO BROWSER — enter full view ==============
-  if (appState.state === STATES.PHOTO_BROWSER) {
-    appState.menuStack.push({ items: [], selectedIndex: appState._photoBrowserIdx, breadcrumb: appState._photoBrowserTitle });
-    appState.state = STATES.PHOTO_VIEW;
-    ScreenRenderer.render();
+  // ============== PHOTO ALBUMS submenu — pick a themed folder ==============
+  if (appState.state === STATES.SUBMENU && appState._submenuOwner === 'PhotoAlbums') {
+    // Strip "(N)" count suffix to find the album by base name.
+    const baseName = item.replace(/\s*\(\d+\)\s*$/, '');
+    const album = PHOTO_ALBUMS.find(a => a.name === baseName);
+    if (album) {
+      appState.menuStack.push({ items: appState.currentMenu, selectedIndex: appState.selectedIndex, breadcrumb: 'Photo Library' });
+      appState.state = STATES.PHOTO_BROWSER;
+      appState._photoBrowserIdx = 0;
+      appState._photoBrowserTitle = album.name;
+      appState._photoBrowserPhotos = album.photos;
+      appState.selectedIndex = 0;
+      ScreenRenderer.render();
+    }
     return;
   }
 
-  // ============== PHOTO VIEW — back to browser ==============
+  // ============== PHOTO BROWSER — double-click to enter full view ==============
+  if (appState.state === STATES.PHOTO_BROWSER) {
+    const now = Date.now();
+    if (appState._lastPhotoSelectAt && (now - appState._lastPhotoSelectAt) < 350) {
+      appState._lastPhotoSelectAt = 0;
+      enterPhotoViewWithZoom();
+    } else {
+      appState._lastPhotoSelectAt = now;
+    }
+    return;
+  }
+
+  // ============== PHOTO VIEW — back to browser (animated) ==============
   if (appState.state === STATES.PHOTO_VIEW) {
-    appState.menuStack.pop();
-    appState.state = STATES.PHOTO_BROWSER;
-    ScreenRenderer.render();
+    exitPhotoViewWithZoom();
     return;
   }
 
@@ -3044,7 +3223,7 @@ const ScreenRenderer = (() => {
   function renderPhotoBrowser() {
     document.getElementById('pb-status-label').textContent =
       appState._photoBrowserTitle || 'Photos';
-    const photos = PHOTO_POOL;
+    const photos = appState._photoBrowserPhotos || PHOTO_POOL;
     const sel = appState._photoBrowserIdx || 0;
     const cols = 4, rows = 3, pageSize = cols * rows;
     const page = Math.floor(sel / pageSize);
@@ -3069,7 +3248,7 @@ const ScreenRenderer = (() => {
   }
 
   function renderPhotoView() {
-    const photos = PHOTO_POOL;
+    const photos = appState._photoBrowserPhotos || PHOTO_POOL;
     const sel = appState._photoBrowserIdx || 0;
     document.getElementById('photo-view-img').src = photos[sel] || '';
     document.getElementById('photo-view-caption').textContent =
@@ -3099,7 +3278,7 @@ const ScreenRenderer = (() => {
       }
     } else if (appState.state === STATES.SUBMENU) {
       const artCont = document.getElementById('sub-art-container');
-      if (appState._submenuOwner === 'Photos') {
+      if (appState._submenuOwner === 'Photos' || appState._submenuOwner === 'PhotoAlbums') {
         renderPhotoThumbnailGrid(artCont, appState.selectedIndex * 9);
       } else {
         let coverURL = null;
