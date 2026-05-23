@@ -8,3 +8,7 @@ _debug/
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Large / personal assets — not committed
+assets/photo/
+assets/video/
