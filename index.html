@@ -2288,7 +2288,12 @@ function handleSelect(payload) {
   }
 
   if (appState.state === STATES.COVER_FLOW) {
-    toggleCoverFlowTracklist();
+    // Play the focused album from its first track (per iPod Classic spec).
+    const albums = getAlbumList();
+    const ci = appState._cfIndex || 0;
+    if (albums[ci] && albums[ci].tracks && albums[ci].tracks.length) {
+      buildPlaylistFromTracks(albums[ci].tracks, 0);
+    }
     return;
   }
 
@@ -3312,6 +3317,12 @@ function announce(msg) {
 // ============================================================
 // COVER FLOW
 // ============================================================
+// Per-album cover overrides — keyed by album name. Takes precedence over the
+// first-track-with-coverUrl pick the aggregator would otherwise use.
+const ALBUM_COVERS = {
+  '张学友精选': 'assets/cover/7. 我真的受伤了.jpg'
+};
+
 function getAlbumList() {
   const albums = {};
   appState.library.forEach(t => {
@@ -3320,6 +3331,13 @@ function getAlbumList() {
     albums[key].tracks.push(t);
     if (!albums[key].coverBlob && t.coverBlob) albums[key].coverBlob = t.coverBlob;
     if (!albums[key].coverUrl  && t.coverUrl)  albums[key].coverUrl  = t.coverUrl;
+  });
+  // Apply explicit overrides last so they always win.
+  Object.values(albums).forEach(a => {
+    if (ALBUM_COVERS[a.name]) {
+      a.coverUrl = ALBUM_COVERS[a.name];
+      a.coverBlob = null;  // ensure the URL path is used, not a stale blob
+    }
   });
   return Object.values(albums);
 }
