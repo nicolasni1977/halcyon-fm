@@ -1358,21 +1358,21 @@ function photoForTrack(track) {
 // Demo tracks — loaded instantly from assets/music/ with no fetch/blob needed.
 // IDs are high fixed integers so they never clash with IDB auto-increment values.
 const DEMO_LIBRARY = [
-  { id:9001, title:'彩虹',       artist:'周杰伦',          album:'我很忙',         trackNum:1, duration:0, coverBlob:null, demoUrl:'assets/music/track1.mp3' },
+  // Original three demos — 鬼迷心窍 (was track4) replaced by the 李宗盛 version below.
+  { id:9001, title:'彩虹',       artist:'周杰伦',          album:'我很忙',          trackNum:1, duration:0, coverBlob:null, demoUrl:'assets/music/track1.mp3' },
   { id:9002, title:'我不够爱你', artist:'刘德华 & 陈慧琳', album:'Love Is Forever', trackNum:2, duration:0, coverBlob:null, demoUrl:'assets/music/track2.mp3' },
-  { id:9003, title:'朋友',       artist:'周华健',          album:'讲义气',         trackNum:3, duration:0, coverBlob:null, demoUrl:'assets/music/track3.mp3' },
-  { id:9004, title:'鬼迷心窍',   artist:'Beyond',          album:'继续革命',       trackNum:4, duration:0, coverBlob:null, demoUrl:'assets/music/track4.mp3' },
-  // ccMixter K-pop tagged (CC BY / CC BY-NC 3.0)
-  { id:9101, title:'Rose Petals',              artist:'Dan_Mantau',  album:'ccMixter K-pop', trackNum:1,  duration:0, coverBlob:null, demoUrl:'assets/music/kpop01_rose_petals.mp3' },
-  { id:9102, title:'Play That Game',           artist:'Dan_Mantau',  album:'ccMixter K-pop', trackNum:2,  duration:0, coverBlob:null, demoUrl:'assets/music/kpop02_play_that_game.mp3' },
-  { id:9103, title:'Babylon',                  artist:'Dan_Mantau',  album:'ccMixter K-pop', trackNum:3,  duration:0, coverBlob:null, demoUrl:'assets/music/kpop03_babylon.mp3' },
-  { id:9104, title:'Until You Are Home Again', artist:'Dan_Mantau',  album:'ccMixter K-pop', trackNum:4,  duration:0, coverBlob:null, demoUrl:'assets/music/kpop04_until_you_are_home_again.mp3' },
-  { id:9105, title:'The River',                artist:'Dan_Mantau',  album:'ccMixter K-pop', trackNum:5,  duration:0, coverBlob:null, demoUrl:'assets/music/kpop05_the_river.mp3' },
-  { id:9106, title:'Rise Up And Remember',     artist:'robomusic',   album:'ccMixter K-pop', trackNum:6,  duration:0, coverBlob:null, demoUrl:'assets/music/kpop06_rise_up_and_remember.mp3' },
-  { id:9107, title:'Oxygen14',                 artist:'semisweet',   album:'ccMixter K-pop', trackNum:7,  duration:0, coverBlob:null, demoUrl:'assets/music/kpop07_oxygen14.mp3' },
-  { id:9108, title:'Frunken Rogg',             artist:'Wired Ant',   album:'ccMixter K-pop', trackNum:8,  duration:0, coverBlob:null, demoUrl:'assets/music/kpop08_frunken_rogg.mp3' },
-  { id:9109, title:'If You Got The Fever',     artist:'coruscate',   album:'ccMixter K-pop', trackNum:9,  duration:0, coverBlob:null, demoUrl:'assets/music/kpop09_if_you_got_the_fever.mp3' },
-  { id:9110, title:'Coventry Carol (Drone)',   artist:'Uncool Bob',  album:'ccMixter K-pop', trackNum:10, duration:0, coverBlob:null, demoUrl:'assets/music/kpop10_coventry_carol.mp3' }
+  { id:9003, title:'朋友',       artist:'周华健',          album:'讲义气',          trackNum:3, duration:0, coverBlob:null, demoUrl:'assets/music/track3.mp3' },
+  // 李宗盛精选 (Jonathan Lee compilation) — covers in assets/cover/<n>. <title>.jpg
+  { id:9201, title:'山丘',           artist:'李宗盛', album:'李宗盛精选', trackNum:1,  duration:0, coverBlob:null, coverUrl:'assets/cover/1. 山丘.jpg',           demoUrl:'assets/music/1. 山丘.mp3' },
+  { id:9202, title:'凡人歌',         artist:'李宗盛', album:'李宗盛精选', trackNum:2,  duration:0, coverBlob:null, coverUrl:'assets/cover/2. 凡人歌.jpg',         demoUrl:'assets/music/2. 凡人歌.mp3' },
+  { id:9203, title:'鬼迷心窍',       artist:'李宗盛', album:'李宗盛精选', trackNum:3,  duration:0, coverBlob:null, coverUrl:'assets/cover/3. 鬼迷心窍.jpg',       demoUrl:'assets/music/3. 鬼迷心窍.mp3' },
+  { id:9204, title:'真心英雄',       artist:'李宗盛', album:'李宗盛精选', trackNum:4,  duration:0, coverBlob:null, coverUrl:'assets/cover/4. 真心英雄.jpg',       demoUrl:'assets/music/4. 真心英雄.mp3' },
+  { id:9205, title:'爱的代价',       artist:'李宗盛', album:'李宗盛精选', trackNum:5,  duration:0, coverBlob:null, coverUrl:'assets/cover/5. 爱的代价.jpg',       demoUrl:'assets/music/5. 爱的代价.mp3' },
+  { id:9206, title:'漂洋过海来看你', artist:'李宗盛', album:'李宗盛精选', trackNum:6,  duration:0, coverBlob:null, coverUrl:'assets/cover/6. 漂洋过海来看你.jpg', demoUrl:'assets/music/6. 漂洋过海来看你.mp3' },
+  { id:9207, title:'给自己的歌',     artist:'李宗盛', album:'李宗盛精选', trackNum:7,  duration:0, coverBlob:null, coverUrl:'assets/cover/7. 给自己的歌.jpg',     demoUrl:'assets/music/7. 给自己的歌.mp3' },
+  { id:9208, title:'寂寞难耐',       artist:'李宗盛', album:'李宗盛精选', trackNum:8,  duration:0, coverBlob:null, coverUrl:'assets/cover/8. 寂寞难耐.jpg',       demoUrl:'assets/music/8. 寂寞难耐.mp3' },
+  { id:9209, title:'阴天',           artist:'李宗盛', album:'李宗盛精选', trackNum:9,  duration:0, coverBlob:null, coverUrl:'assets/cover/9. 阴天.jpg',           demoUrl:'assets/music/9. 阴天.mp3' },
+  { id:9210, title:'当爱已成往事',   artist:'李宗盛', album:'李宗盛精选', trackNum:10, duration:0, coverBlob:null, coverUrl:'assets/cover/10. 当爱已成往事.jpg', demoUrl:'assets/music/10. 当爱已成往事.mp3' }
 ];
 
 // ============================================================
@@ -2782,7 +2782,8 @@ async function playTrack(track) {
     if (track.demoUrl) {
       // Demo track — play directly from the assets/music/ path, no blob needed
       audioEl.src = track.demoUrl;
-      appState._currentCoverURL = photoForTrack(track);
+      // Prefer the track's bundled cover; fall back to a random photo for tracks without one.
+      appState._currentCoverURL = track.coverUrl || photoForTrack(track);
       audioEl.play().catch(()=>{});
     } else {
       // User-imported track — retrieve audio blob from IndexedDB
@@ -2826,6 +2827,7 @@ function getAlbumList() {
     if (!albums[key]) albums[key] = { name:key, art:null, tracks:[] };
     albums[key].tracks.push(t);
     if (!albums[key].coverBlob && t.coverBlob) albums[key].coverBlob = t.coverBlob;
+    if (!albums[key].coverUrl  && t.coverUrl)  albums[key].coverUrl  = t.coverUrl;
   });
   return Object.values(albums);
 }
@@ -2870,6 +2872,11 @@ function renderCoverFlow() {
       img.src = url;
       img.alt = album.name;
       img.onload = () => URL.revokeObjectURL(url);
+      card.appendChild(img);
+    } else if (album.coverUrl) {
+      const img = document.createElement('img');
+      img.src = album.coverUrl;
+      img.alt = album.name;
       card.appendChild(img);
     } else {
       card.innerHTML = generateMosaicSVG(ai * 31);
@@ -3405,6 +3412,8 @@ const ScreenRenderer = (() => {
                  || appState._browseTracklist[0];
           if (t.coverBlob) {
             coverURL = URL.createObjectURL(t.coverBlob);
+          } else if (t.coverUrl) {
+            coverURL = t.coverUrl;
           } else {
             coverURL = photoForTrack(t);
           }
