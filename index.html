@@ -692,6 +692,28 @@ html, body {
   border-radius: 3px;
 }
 #overlay-context.visible { display: flex; }
+
+/* Toast: brief bottom pill for ephemeral confirmations ("Added to On-The-Go" etc.) */
+#toast-overlay {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translate(-50%, 6px);
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 7px 13px;
+  border-radius: 14px;
+  white-space: nowrap;
+  z-index: 95;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms ease, transform 220ms cubic-bezier(0.34, 1.4, 0.64, 1);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+}
+#toast-overlay.visible { opacity: 1; transform: translate(-50%, 0); }
 .context-box {
   background: #FFFFFF; border-radius: 4px;
   overflow: hidden; width: 80%;
@@ -2006,6 +2028,14 @@ function handleBootComplete() {
 
 function handleSelect(payload) {
   if (appState.state === STATES.OFF) { dispatch('POWER_ON'); return; }
+
+  // Context menu (long-press-center pop-up) takes priority over normal SELECT.
+  if (overlayContext && overlayContext.classList.contains('visible')) {
+    AudioEngine.confirm();
+    handleContextSelect(appState.contextSelectedIndex || 0);
+    return;
+  }
+
   AudioEngine.confirm();
 
   if (appState.state === STATES.MAIN_MENU) {
@@ -2261,6 +2291,20 @@ function handlePlayPause() {
 }
 
 function handleScroll(dir) {
+  // Context menu (long-press-center pop-up): wheel rotation moves the highlight.
+  if (overlayContext && overlayContext.classList.contains('visible')) {
+    const rows = document.querySelectorAll('#context-box .context-item');
+    const n = rows.length;
+    if (n > 0) {
+      const cur = appState.contextSelectedIndex || 0;
+      const next = ((cur + dir) % n + n) % n;
+      appState.contextSelectedIndex = next;
+      rows.forEach((row, i) => row.classList.toggle('selected', i === next));
+      AudioEngine.tick();
+    }
+    return;
+  }
+
   let list;
   if (appState.state === STATES.MAIN_MENU) list = MAIN_MENU_ITEMS;
   else if (appState.state === STATES.SUBMENU) list = appState.currentMenu;
@@ -2388,10 +2432,16 @@ function handleContextSelect(idx) {
     appState.state = STATES.SUBMENU;
     appState._subBreadcrumb = album;
   } else if (item === 'Add to On-The-Go') {
-    if (appState.currentTrack && !appState.onTheGo.includes(appState.currentTrack.id)) {
-      appState.onTheGo.push(appState.currentTrack.id);
-      savePlaylists();
+    if (appState.currentTrack) {
+      if (!appState.onTheGo.includes(appState.currentTrack.id)) {
+        appState.onTheGo.push(appState.currentTrack.id);
+        savePlaylists();
+        showToast('Added to On-The-Go');
+      } else {
+        showToast('Already in On-The-Go');
+      }
     }
+    return;  // stay on Now Playing; don't fall through to state changes
   } else if (item === 'Start Genius') {
     // Genius: similar artist tracks
     if (appState.currentTrack) {
@@ -2817,6 +2867,24 @@ function showVolumeOverlay(vol) {
   el.classList.add('visible');
   clearTimeout(_volumeOverlayTimer);
   _volumeOverlayTimer = setTimeout(() => el.classList.remove('visible'), 1400);
+}
+
+// Lightweight toast — bottom-centered pill on the LCD, fades after ~1.4s.
+// Lazy-created on first call so existing screen markup doesn't need editing.
+let _toastTimer = null;
+function showToast(text, ms) {
+  let el = document.getElementById('toast-overlay');
+  if (!el) {
+    const screen = document.getElementById('screen-inner') || document.body;
+    el = document.createElement('div');
+    el.id = 'toast-overlay';
+    screen.appendChild(el);
+  }
+  el.textContent = text;
+  void el.offsetHeight;             // commit content before transitioning
+  el.classList.add('visible');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('visible'), ms || 1400);
 }
 
 // ============================================================
