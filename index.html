@@ -852,6 +852,30 @@ html, body {
 }
 .cf-track-row.selected { color: #fff; background: rgba(58,120,216,0.4); }
 
+/* Stopwatch */
+#screen-stopwatch { background:#fff; }
+#stopwatch-body { flex:1; display:flex; flex-direction:column; align-items:center; padding:14px 10px 8px; }
+#stopwatch-display {
+  font-family: 'SF Mono','Menlo','Consolas',monospace;
+  font-size: 38px; font-weight: 200;
+  color: #1a1a1a;
+  letter-spacing: 0.02em;
+  margin-top: 8px;
+}
+#stopwatch-hint {
+  font-size: 9px; color: #888; margin-top: 6px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+#stopwatch-laps {
+  margin-top: 10px; width: 100%;
+  font-size: 10px; color: #444;
+  display: flex; flex-direction: column; gap: 2px;
+  overflow: hidden;
+}
+.stopwatch-lap { display:flex; justify-content:space-between; border-top: 1px solid #eee; padding: 2px 4px; }
+.stopwatch-lap .lap-num { color:#888; }
+.stopwatch-lap .lap-time { font-family: monospace; }
+
 /* Screen state transitions */
 .screen-state { opacity: 1; transition: opacity 150ms ease; }
 .screen-state.fading { opacity: 0; }
@@ -1139,6 +1163,20 @@ html, body {
           <div id="coverflow-tracklist"></div>
         </div>
 
+        <!-- STOPWATCH state -->
+        <div id="screen-stopwatch" class="screen-state">
+          <div class="status-bar">
+            <span class="status-label">Stopwatch</span>
+            <span class="status-play">&#9654;</span>
+            <div class="battery-pill"></div>
+          </div>
+          <div id="stopwatch-body">
+            <div id="stopwatch-display">00:00.0</div>
+            <div id="stopwatch-hint"></div>
+            <div id="stopwatch-laps"></div>
+          </div>
+        </div>
+
         <!-- PHOTO BROWSER state -->
         <div id="screen-photo-browser" class="screen-state">
           <div class="status-bar">
@@ -1242,7 +1280,8 @@ const STATES = {
   NOW_PLAYING: 'NOW_PLAYING',
   SETTINGS: 'SETTINGS',
   PHOTO_BROWSER: 'PHOTO_BROWSER',
-  PHOTO_VIEW: 'PHOTO_VIEW'
+  PHOTO_VIEW: 'PHOTO_VIEW',
+  STOPWATCH: 'STOPWATCH'
 };
 
 const LS_KEYS = {
@@ -1755,6 +1794,7 @@ const appState = {
   backlightDimmed: false,
   lastInteraction: Date.now(),
   centerButtonMode: 'default', // default|scrubber|rating|shuffle-ind|repeat-ind
+  stopwatch: { running: false, elapsed: 0, startedAt: 0, laps: [], _raf: null },
   contextSelectedIndex: 0,
   settings: defaultSettings(),
   library: [],        // array of full track objects from IDB
@@ -1978,6 +2018,7 @@ function handleSelect(payload) {
     if (item === 'Music') {
       pushFrame('Music');
       appState.currentMenu = MUSIC_SUBMENU;
+      appState._submenuOwner = 'Music';
       appState.state = STATES.SUBMENU;
     } else if (item === 'Settings') {
       pushFrame();
@@ -2051,6 +2092,13 @@ function handleSelect(payload) {
     toggleCoverFlowTracklist();
     return;
   }
+
+  if (appState.state === STATES.STOPWATCH) {
+    const sw = appState.stopwatch;
+    if (sw.running) stopwatchLap();
+    else if (sw.elapsed > 0) stopwatchReset();
+    return;
+  }
 }
 
 function handleMenu() {
@@ -2084,6 +2132,24 @@ function handleMenu() {
     appState.state = STATES.SUBMENU;
     // parentOwner on the popped frame tells us which submenu we were in when we drilled in.
     appState._submenuOwner = (prev && prev.parentOwner !== undefined) ? prev.parentOwner : 'Photos';
+    ScreenRenderer.render();
+    return;
+  }
+
+  if (appState.state === STATES.STOPWATCH) {
+    // Pause the timer while leaving — keep elapsed/laps so user can return.
+    if (appState.stopwatch.running) stopwatchPause();
+    const prev = appState.menuStack.pop();
+    if (prev) {
+      appState.currentMenu = prev.items;
+      appState.selectedIndex = prev.selectedIndex;
+      appState._submenuOwner = (prev.parentOwner !== undefined) ? prev.parentOwner : 'Extras';
+      appState.state = STATES.SUBMENU;
+    } else {
+      appState.state = STATES.MAIN_MENU;
+      appState.currentMenu = MAIN_MENU_ITEMS;
+      appState.selectedIndex = 0;
+    }
     ScreenRenderer.render();
     return;
   }
@@ -2181,6 +2247,11 @@ function handlePrev() {
 function handlePlayPause() {
   if (appState.state === STATES.OFF) { dispatch('POWER_ON'); return; }
   AudioEngine.buttonPress();
+  if (appState.state === STATES.STOPWATCH) {
+    if (appState.stopwatch.running) stopwatchPause();
+    else stopwatchStart();
+    return;
+  }
   if (audioEl.paused) {
     audioEl.play().catch(()=>{});
     if (appState.currentTrack) appState.state = STATES.NOW_PLAYING;
@@ -2532,18 +2603,23 @@ function navigateSubmenuSelect() {
 
   // ============== EXTRAS submenu ==============
   if (appState.state === STATES.SUBMENU && appState._submenuOwner === 'Extras') {
-    const body = {
-      'Alarms': 'No alarms set.\nCreate one via iTunes sync.',
-      'Calendars': 'No calendar events.\nSync via Address Book / Outlook.',
-      'Clocks': 'Local time: ' + new Date().toLocaleTimeString(),
-      'Contacts': 'No contacts synced.\nEnable disk use in iTunes.',
-      'Games': 'Available games:\n• iQuiz\n• Klondike\n• Vortex\n\n(Coming soon)',
-      'Notes': 'No notes.\nDrop .txt files onto the device when in disk mode.',
-      'Screen Lock': 'Set a 4-digit combination\nto lock the screen.\n\n(Coming soon)',
-      'Stopwatch': 'Press ► to start the timer.\nCenter to log laps.\n\n(Coming soon)',
-      'Voice Memos': 'No recordings.\nConnect a mic to record.'
-    }[item] || 'Not implemented.';
-    showInfoScreen(item, body);
+    const handler = {
+      'Alarms':      () => showInfoScreen('Alarms',     'No alarms set.\nCreate one via iTunes sync.'),
+      'Calendars':   () => showInfoScreen('Calendars',  'No calendar events.\nSync via Address Book / Outlook.'),
+      'Clocks':      () => showInfoScreen('Clocks',     'Local time: ' + new Date().toLocaleTimeString()),
+      'Contacts':    () => showInfoScreen('Contacts',   'No contacts synced.\nEnable disk use in iTunes.'),
+      'Games':       () => showInfoScreen('Games',      'Available games:\n• iQuiz\n• Klondike\n• Vortex\n\n(Coming soon)'),
+      'Notes':       () => showInfoScreen('Notes',      'No notes.\nDrop .txt files onto the device when in disk mode.'),
+      'Screen Lock': () => showInfoScreen('Screen Lock','Set a 4-digit combination\nto lock the screen.\n\n(Coming soon)'),
+      'Stopwatch':   () => {
+        appState.menuStack.push({ items: appState.currentMenu, selectedIndex: appState.selectedIndex, breadcrumb: 'Extras', parentOwner: appState._submenuOwner });
+        appState.state = STATES.STOPWATCH;
+        ScreenRenderer.render();
+      },
+      'Voice Memos': () => showInfoScreen('Voice Memos','No recordings.\nConnect a mic to record.')
+    }[item];
+    if (handler) handler();
+    else showInfoScreen(item, 'Not implemented.');
     return;
   }
 
@@ -3285,6 +3361,75 @@ function showContextMenu() {
 }
 
 // ============================================================
+// STOPWATCH (Extras → Stopwatch)
+// ============================================================
+function fmtStopwatch(ms) {
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  const t = Math.floor((ms % 1000) / 100);
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '.' + t;
+}
+function stopwatchTick() {
+  const sw = appState.stopwatch;
+  if (!sw.running) return;
+  const now = performance.now();
+  const total = sw.elapsed + (now - sw.startedAt);
+  const disp = document.getElementById('stopwatch-display');
+  if (disp) disp.textContent = fmtStopwatch(total);
+  sw._raf = requestAnimationFrame(stopwatchTick);
+}
+function stopwatchStart() {
+  const sw = appState.stopwatch;
+  if (sw.running) return;
+  sw.running = true;
+  sw.startedAt = performance.now();
+  sw._raf = requestAnimationFrame(stopwatchTick);
+  renderStopwatch();
+}
+function stopwatchPause() {
+  const sw = appState.stopwatch;
+  if (!sw.running) return;
+  sw.elapsed += performance.now() - sw.startedAt;
+  sw.running = false;
+  if (sw._raf) cancelAnimationFrame(sw._raf);
+  sw._raf = null;
+  renderStopwatch();
+}
+function stopwatchReset() {
+  const sw = appState.stopwatch;
+  if (sw._raf) cancelAnimationFrame(sw._raf);
+  sw.running = false; sw.elapsed = 0; sw.startedAt = 0; sw.laps = []; sw._raf = null;
+  renderStopwatch();
+}
+function stopwatchLap() {
+  const sw = appState.stopwatch;
+  const total = sw.elapsed + (sw.running ? performance.now() - sw.startedAt : 0);
+  sw.laps.unshift(total);
+  if (sw.laps.length > 5) sw.laps.length = 5;  // keep last 5
+  renderStopwatch();
+}
+function renderStopwatch() {
+  const sw = appState.stopwatch;
+  const total = sw.elapsed + (sw.running ? performance.now() - sw.startedAt : 0);
+  const disp = document.getElementById('stopwatch-display');
+  if (disp) disp.textContent = fmtStopwatch(total);
+  const hint = document.getElementById('stopwatch-hint');
+  if (hint) hint.textContent = sw.running
+    ? 'Play/Pause to stop  ·  Center for lap'
+    : (sw.elapsed > 0 ? 'Play/Pause to resume  ·  Center to reset' : 'Play/Pause to start');
+  const lapsEl = document.getElementById('stopwatch-laps');
+  if (lapsEl) {
+    lapsEl.innerHTML = '';
+    sw.laps.forEach((t, i) => {
+      const row = document.createElement('div');
+      row.className = 'stopwatch-lap';
+      row.innerHTML = '<span class="lap-num">Lap ' + (sw.laps.length - i) + '</span><span class="lap-time">' + fmtStopwatch(t) + '</span>';
+      lapsEl.appendChild(row);
+    });
+  }
+}
+
+// ============================================================
 // SECTION 7: SCREEN RENDERER
 // ============================================================
 const ScreenRenderer = (() => {
@@ -3297,7 +3442,8 @@ const ScreenRenderer = (() => {
     settings:     document.getElementById('screen-settings'),
     coverflow:    document.getElementById('screen-coverflow'),
     photoBrowser: document.getElementById('screen-photo-browser'),
-    photoView:    document.getElementById('screen-photo-view')
+    photoView:    document.getElementById('screen-photo-view'),
+    stopwatch:    document.getElementById('screen-stopwatch')
   };
 
   function render() {
@@ -3323,6 +3469,9 @@ const ScreenRenderer = (() => {
       case STATES.PHOTO_VIEW:
                              renderPhotoView();
                              states.photoView.classList.add('active');  break;
+      case STATES.STOPWATCH:
+                             renderStopwatch();
+                             states.stopwatch.classList.add('active');  break;
     }
     updateStatusLabels();
     updatePlayIndicators();
@@ -3537,6 +3686,8 @@ const ScreenRenderer = (() => {
       const artCont = document.getElementById('sub-art-container');
       if (appState._submenuOwner === 'Photos' || appState._submenuOwner === 'PhotoAlbums') {
         renderPhotoThumbnailGrid(artCont, appState.selectedIndex * 9);
+      } else if (appState.currentMenu === MUSIC_SUBMENU) {
+        renderMusicSubmenuArt(artCont, MUSIC_SUBMENU[appState.selectedIndex]);
       } else {
         let coverURL = null;
         let seed = 0;
@@ -3556,6 +3707,121 @@ const ScreenRenderer = (() => {
         renderArtInContainer(artCont, coverURL, seed);
       }
     }
+  }
+
+  function _coverForTrack(t) {
+    if (t.coverBlob) return URL.createObjectURL(t.coverBlob);
+    if (t.coverUrl)  return t.coverUrl;
+    return photoForTrack(t);
+  }
+
+  function renderMusicSubmenuArt(container, selectedItem) {
+    container.innerHTML = '';
+    const tracks = appState.library || [];
+    if (!tracks.length) {
+      container.innerHTML = generateMosaicSVG(0);
+      return;
+    }
+
+    // Distinct album covers (preserve insertion order)
+    const seen = new Set();
+    const albumCovers = [];
+    for (const t of tracks) {
+      const key = t.album || 'Unknown';
+      if (seen.has(key)) continue;
+      seen.add(key);
+      albumCovers.push(_coverForTrack(t));
+    }
+
+    // For pure-icon items, use an SVG; for cover items, use img elements.
+    if (selectedItem === 'Search') {
+      container.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1a1a1a;">' +
+        '<svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#bbb" stroke-width="2"><circle cx="10.5" cy="10.5" r="6"/><line x1="15" y1="15" x2="20" y2="20" stroke-linecap="round"/></svg>' +
+        '</div>';
+      return;
+    }
+    if (selectedItem === 'Audiobooks') {
+      container.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1a1a1a;">' +
+        '<svg viewBox="0 0 32 24" width="56" height="42" fill="#bbb"><path d="M2 2 H14 V22 H2 Z M18 2 H30 V22 H18 Z M14 4 Q16 6 18 4 V22 Q16 20 14 22 Z" opacity="0.85"/></svg>' +
+        '</div>';
+      return;
+    }
+
+    // Cover Flow — 3 covers stacked with slight offset
+    if (selectedItem === 'Cover Flow' && albumCovers.length) {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;width:100%;height:100%;background:#0a0a0a;overflow:hidden;';
+      const picks = [0, 1, 2].map(i => albumCovers[i % albumCovers.length]);
+      const transforms = [
+        'translate(-22%, 0) rotate(-8deg) scale(0.72)',
+        'translate(0, 0) rotate(0deg) scale(0.92)',
+        'translate(22%, 0) rotate(8deg) scale(0.72)'
+      ];
+      const zs = [1, 3, 1];
+      const opacities = [0.55, 1, 0.55];
+      picks.forEach((url, i) => {
+        const img = document.createElement('img');
+        img.src = url; img.alt = '';
+        img.style.cssText =
+          'position:absolute; top:50%; left:50%; width:62%; aspect-ratio:1; ' +
+          'object-fit:cover; box-shadow:0 4px 10px rgba(0,0,0,0.6); ' +
+          'border-radius:2px; transform-origin:center center; ' +
+          'transform: translate(-50%,-50%) ' + transforms[i] + '; ' +
+          'z-index:' + zs[i] + '; opacity:' + opacities[i] + ';';
+        wrap.appendChild(img);
+      });
+      container.appendChild(wrap);
+      return;
+    }
+
+    // 2x2 grid for Albums / Compilations
+    if (selectedItem === 'Albums' || selectedItem === 'Compilations') {
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:1px;width:100%;height:100%;background:#111;';
+      for (let i = 0; i < 4; i++) {
+        const img = document.createElement('img');
+        img.src = albumCovers[i % albumCovers.length];
+        img.alt = '';
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+        grid.appendChild(img);
+      }
+      container.appendChild(grid);
+      return;
+    }
+
+    // Playlists — list icon overlay on a cover backdrop
+    if (selectedItem === 'Playlists') {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;width:100%;height:100%;background:#000;';
+      const img = document.createElement('img');
+      img.src = albumCovers[0]; img.alt = '';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;opacity:0.45;display:block;';
+      wrap.appendChild(img);
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;';
+      overlay.innerHTML = '<svg viewBox="0 0 24 18" width="56" height="42" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round">' +
+        '<circle cx="3" cy="3"  r="1.4" fill="#fff"/><line x1="7" y1="3"  x2="22" y2="3"/>' +
+        '<circle cx="3" cy="9"  r="1.4" fill="#fff"/><line x1="7" y1="9"  x2="22" y2="9"/>' +
+        '<circle cx="3" cy="15" r="1.4" fill="#fff"/><line x1="7" y1="15" x2="22" y2="15"/>' +
+        '</svg>';
+      wrap.appendChild(overlay);
+      container.appendChild(wrap);
+      return;
+    }
+
+    // Default — single cover (Artists, Songs, Genres, Composers, anything else)
+    let cover = albumCovers[0];
+    if (selectedItem === 'Genres') {
+      const withGenre = tracks.find(t => t.genre);
+      if (withGenre) cover = _coverForTrack(withGenre);
+    } else if (selectedItem === 'Composers') {
+      const withC = tracks.find(t => t.composer);
+      if (withC) cover = _coverForTrack(withC);
+    }
+    const img = document.createElement('img');
+    img.src = cover; img.alt = '';
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    container.appendChild(img);
   }
 
   function renderArtInContainer(container, coverURL, seed) {
