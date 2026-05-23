@@ -1385,16 +1385,16 @@ function photoForTrack(track) {
 // IDs are high fixed integers so they never clash with IDB auto-increment values.
 const DEMO_LIBRARY = [
   // 李宗盛精选 (Jonathan Lee compilation) — covers in assets/cover/<n>. <title>.jpg
-  { id:9201, title:'山丘',           artist:'李宗盛', album:'李宗盛精选', trackNum:1,  duration:0, coverBlob:null, coverUrl:'assets/cover/1. 山丘.jpg',           demoUrl:'assets/music/1. 山丘.mp3' },
-  { id:9202, title:'凡人歌',         artist:'李宗盛', album:'李宗盛精选', trackNum:2,  duration:0, coverBlob:null, coverUrl:'assets/cover/2. 凡人歌.jpg',         demoUrl:'assets/music/2. 凡人歌.mp3' },
-  { id:9203, title:'鬼迷心窍',       artist:'李宗盛', album:'李宗盛精选', trackNum:3,  duration:0, coverBlob:null, coverUrl:'assets/cover/3. 鬼迷心窍.jpg',       demoUrl:'assets/music/3. 鬼迷心窍.mp3' },
-  { id:9204, title:'真心英雄',       artist:'李宗盛', album:'李宗盛精选', trackNum:4,  duration:0, coverBlob:null, coverUrl:'assets/cover/4. 真心英雄.jpg',       demoUrl:'assets/music/4. 真心英雄.mp3' },
-  { id:9205, title:'爱的代价',       artist:'李宗盛', album:'李宗盛精选', trackNum:5,  duration:0, coverBlob:null, coverUrl:'assets/cover/5. 爱的代价.jpg',       demoUrl:'assets/music/5. 爱的代价.mp3' },
-  { id:9206, title:'漂洋过海来看你', artist:'李宗盛', album:'李宗盛精选', trackNum:6,  duration:0, coverBlob:null, coverUrl:'assets/cover/6. 漂洋过海来看你.jpg', demoUrl:'assets/music/6. 漂洋过海来看你.mp3' },
-  { id:9207, title:'给自己的歌',     artist:'李宗盛', album:'李宗盛精选', trackNum:7,  duration:0, coverBlob:null, coverUrl:'assets/cover/7. 给自己的歌.jpg',     demoUrl:'assets/music/7. 给自己的歌.mp3' },
-  { id:9208, title:'寂寞难耐',       artist:'李宗盛', album:'李宗盛精选', trackNum:8,  duration:0, coverBlob:null, coverUrl:'assets/cover/8. 寂寞难耐.jpg',       demoUrl:'assets/music/8. 寂寞难耐.mp3' },
-  { id:9209, title:'阴天',           artist:'李宗盛', album:'李宗盛精选', trackNum:9,  duration:0, coverBlob:null, coverUrl:'assets/cover/9. 阴天.jpg',           demoUrl:'assets/music/9. 阴天.mp3' },
-  { id:9210, title:'当爱已成往事',   artist:'李宗盛', album:'李宗盛精选', trackNum:10, duration:0, coverBlob:null, coverUrl:'assets/cover/10. 当爱已成往事.jpg', demoUrl:'assets/music/10. 当爱已成往事.mp3' }
+  { id:9201, title:'山丘',           artist:'李宗盛', album:'李宗盛精选', trackNum:1,  duration:0, coverBlob:null, coverUrl:'assets/cover/1. 山丘.jpg',           demoUrl:'assets/music/1. 山丘.mp3',           lyricsUrl:'assets/lyrics/1. 山丘.lrc' },
+  { id:9202, title:'凡人歌',         artist:'李宗盛', album:'李宗盛精选', trackNum:2,  duration:0, coverBlob:null, coverUrl:'assets/cover/2. 凡人歌.jpg',         demoUrl:'assets/music/2. 凡人歌.mp3',         lyricsUrl:'assets/lyrics/2. 凡人歌.lrc' },
+  { id:9203, title:'鬼迷心窍',       artist:'李宗盛', album:'李宗盛精选', trackNum:3,  duration:0, coverBlob:null, coverUrl:'assets/cover/3. 鬼迷心窍.jpg',       demoUrl:'assets/music/3. 鬼迷心窍.mp3',       lyricsUrl:'assets/lyrics/3. 鬼迷心窍.lrc' },
+  { id:9204, title:'真心英雄',       artist:'李宗盛', album:'李宗盛精选', trackNum:4,  duration:0, coverBlob:null, coverUrl:'assets/cover/4. 真心英雄.jpg',       demoUrl:'assets/music/4. 真心英雄.mp3',       lyricsUrl:'assets/lyrics/4. 真心英雄.lrc' },
+  { id:9205, title:'爱的代价',       artist:'李宗盛', album:'李宗盛精选', trackNum:5,  duration:0, coverBlob:null, coverUrl:'assets/cover/5. 爱的代价.jpg',       demoUrl:'assets/music/5. 爱的代价.mp3',       lyricsUrl:'assets/lyrics/5. 爱的代价.lrc' },
+  { id:9206, title:'漂洋过海来看你', artist:'李宗盛', album:'李宗盛精选', trackNum:6,  duration:0, coverBlob:null, coverUrl:'assets/cover/6. 漂洋过海来看你.jpg', demoUrl:'assets/music/6. 漂洋过海来看你.mp3', lyricsUrl:'assets/lyrics/6. 漂洋过海来看你.lrc' },
+  { id:9207, title:'给自己的歌',     artist:'李宗盛', album:'李宗盛精选', trackNum:7,  duration:0, coverBlob:null, coverUrl:'assets/cover/7. 给自己的歌.jpg',     demoUrl:'assets/music/7. 给自己的歌.mp3',     lyricsUrl:'assets/lyrics/7. 给自己的歌.lrc' },
+  { id:9208, title:'寂寞难耐',       artist:'李宗盛', album:'李宗盛精选', trackNum:8,  duration:0, coverBlob:null, coverUrl:'assets/cover/8. 寂寞难耐.jpg',       demoUrl:'assets/music/8. 寂寞难耐.mp3',       lyricsUrl:'assets/lyrics/8. 寂寞难耐.lrc' },
+  { id:9209, title:'阴天',           artist:'李宗盛', album:'李宗盛精选', trackNum:9,  duration:0, coverBlob:null, coverUrl:'assets/cover/9. 阴天.jpg',           demoUrl:'assets/music/9. 阴天.mp3',           lyricsUrl:'assets/lyrics/9. 阴天.lrc' },
+  { id:9210, title:'当爱已成往事',   artist:'李宗盛', album:'李宗盛精选', trackNum:10, duration:0, coverBlob:null, coverUrl:'assets/cover/10. 当爱已成往事.jpg', demoUrl:'assets/music/10. 当爱已成往事.mp3', lyricsUrl:'assets/lyrics/10. 当爱已成往事.lrc' }
 ];
 
 // ============================================================
@@ -2750,58 +2750,82 @@ function showVolumeOverlay(vol) {
 // built from the track metadata.
 // ============================================================
 // ============================================================
-// LYRICS — keyed by track id.
+// LYRICS — loaded at runtime from per-track .lrc files in assets/lyrics/.
 //
-// Synced format: array of { t: seconds, line: string }. The line whose t is
-// the most-recent <= currentTime is highlighted and centered in the LCD;
-// surrounding lines dim and the whole stack smoothly scrolls.
+// Each track may declare a `lyricsUrl` pointing to a standard LRC file
+// ([mm:ss.xx] timestamp prefix on each line). The loader fetches and parses
+// the file on demand, caches the parsed entries by URL, and feeds them into
+// renderLyricsForTrack. Tracks without lyricsUrl fall through to the
+// metadata-placeholder card.
 //
-// Continuous format: array of plain strings. Falls back to the 60s loop scroll.
-//
-// NOTE: To respect copyright, the entries below contain ONLY public
-// attribution metadata for each track (song title, songwriter credit, year,
-// album, separators). No actual lyric content is included. To add real
-// lyrics you have rights to, just replace the lines in the relevant entry.
+// The LYRICS object below is reserved for tracks where you want to override
+// or inline lyrics (any value placed here wins over lyricsUrl).
+// Format: { trackId: [ {t: seconds, line: 'text'}, ... ] }
 // ============================================================
-function _attrLyrics(track, year) {
-  // Build an attribution-only timeline. Spacing tuned for ~5-min tracks.
-  return [
-    { t:   0, line: track.title },
-    { t:   8, line: '詞 · 曲 · ' + (track.artist || '') },
-    { t:  18, line: year ? String(year) : '' },
-    { t:  28, line: '· · ·' },
-    { t:  55, line: track.album || '' },
-    { t:  90, line: '· · ·' },
-    { t: 130, line: track.title },
-    { t: 160, line: '詞 · 曲 · ' + (track.artist || '') },
-    { t: 200, line: '· · ·' },
-    { t: 240, line: track.title },
-    { t: 280, line: '· · ·' }
-  ].filter(e => e.line && e.line.trim());
-}
-const LYRICS = {
-  // 李宗盛精选 — attribution timelines (year of original release)
-  9201: _attrLyrics({ title:'山丘',           artist:'李宗盛', album:'李宗盛精選' }, 2013),
-  9202: _attrLyrics({ title:'凡人歌',         artist:'李宗盛', album:'李宗盛精選' }, 1991),
-  9203: _attrLyrics({ title:'鬼迷心竅',       artist:'李宗盛', album:'李宗盛精選' }, 1992),
-  9204: _attrLyrics({ title:'真心英雄',       artist:'李宗盛', album:'李宗盛精選' }, 1994),
-  9205: _attrLyrics({ title:'愛的代價',       artist:'李宗盛', album:'李宗盛精選' }, 1992),
-  9206: _attrLyrics({ title:'漂洋過海來看你', artist:'李宗盛', album:'李宗盛精選' }, 1991),
-  9207: _attrLyrics({ title:'給自己的歌',     artist:'李宗盛', album:'李宗盛精選' }, 2007),
-  9208: _attrLyrics({ title:'寂寞難耐',       artist:'李宗盛', album:'李宗盛精選' }, 1990),
-  9209: _attrLyrics({ title:'陰天',           artist:'李宗盛', album:'李宗盛精選' }, 1999),
-  9210: _attrLyrics({ title:'當愛已成往事',   artist:'李宗盛', album:'李宗盛精選' }, 1992)
-};
+const LYRICS = {};
 
-function renderLyricsForTrack(track) {
+const _lrcCache = new Map();  // url -> Promise<Array<{t, line}> | null>
+
+function parseLRC(text) {
+  // Match a single [mm:ss], [mm:ss.xx], or [mm:ss.xxx] timestamp.
+  const tsRe = /^\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]/;
+  const out = [];
+  text.split(/\r?\n/).forEach(raw => {
+    let line = raw;
+    const stamps = [];
+    // A line can carry multiple leading timestamps: [00:10][00:50] text
+    while (true) {
+      const m = line.match(tsRe);
+      if (!m) break;
+      const mm = parseInt(m[1], 10);
+      const ss = parseInt(m[2], 10);
+      const fracStr = m[3] || '';
+      const frac = fracStr
+        ? parseInt(fracStr.padEnd(3, '0').slice(0, 3), 10) / 1000
+        : 0;
+      stamps.push(mm * 60 + ss + frac);
+      line = line.slice(m[0].length);
+    }
+    if (!stamps.length) return; // metadata tag like [ti:..], [ar:..] — skip
+    const text = line.trim();
+    stamps.forEach(t => out.push({ t, line: text }));
+  });
+  out.sort((a, b) => a.t - b.t);
+  return out;
+}
+
+function loadLyricsFromUrl(url) {
+  if (!url) return Promise.resolve(null);
+  if (_lrcCache.has(url)) return _lrcCache.get(url);
+  const p = fetch(url)
+    .then(r => r.ok ? r.text() : null)
+    .then(text => text ? parseLRC(text) : null)
+    .catch(() => null);
+  _lrcCache.set(url, p);
+  return p;
+}
+
+let _lyricsRenderToken = 0;
+async function renderLyricsForTrack(track) {
   const overlay = document.getElementById('np-lyrics');
   const el = document.getElementById('np-lyrics-track');
   if (!el || !track) return;
+  // Tag this render call so a slow fetch from a previous track can be discarded
+  // if the user has already moved on to the next song.
+  const myToken = ++_lyricsRenderToken;
   el.innerHTML = '';
   el._lyricsData = null;
   el._lastActiveIdx = -1;
   el.style.transform = '';
-  const data = LYRICS[track.id];
+
+  // 1) Inline override in the LYRICS map wins. 2) Otherwise fetch lyricsUrl.
+  let data = LYRICS[track.id];
+  if (!data && track.lyricsUrl) {
+    data = await loadLyricsFromUrl(track.lyricsUrl);
+    // Track changed while we were fetching — drop this render.
+    if (myToken !== _lyricsRenderToken) return;
+  }
+
   const isSynced = Array.isArray(data) && data.length &&
                    typeof data[0] === 'object' && 'line' in data[0];
   if (isSynced) {
