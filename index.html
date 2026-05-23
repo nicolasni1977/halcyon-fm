@@ -495,6 +495,32 @@ html, body {
   from { transform: translateY(0); }
   to   { transform: translateY(calc(-100% - 200px)); }
 }
+/* Time-synced mode: container translates to keep the active line centered;
+   non-active lines dim, active line is larger and more prominent. */
+#np-lyrics-track.synced {
+  top: 0;
+  animation: none !important;
+  transition: transform 520ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  gap: 16px;
+}
+#np-lyrics-track.synced .lyric-line {
+  opacity: 0.38;
+  font-size: 11px;
+  font-weight: 500;
+  transition:
+    opacity   420ms ease,
+    font-size 420ms ease,
+    font-weight 420ms ease,
+    text-shadow 420ms ease;
+}
+#np-lyrics-track.synced .lyric-line.active {
+  opacity: 1;
+  font-size: 15px;
+  font-weight: 700;
+  text-shadow:
+    0 1px 3px rgba(0,0,0,0.95),
+    0 0 14px rgba(255,255,255,0.30);
+}
 /* Subtle vignette + scrim across the whole art for legibility */
 #screen-now-playing .split-pane::before {
   content: '';
@@ -1358,10 +1384,6 @@ function photoForTrack(track) {
 // Demo tracks — loaded instantly from assets/music/ with no fetch/blob needed.
 // IDs are high fixed integers so they never clash with IDB auto-increment values.
 const DEMO_LIBRARY = [
-  // Original three demos — 鬼迷心窍 (was track4) replaced by the 李宗盛 version below.
-  { id:9001, title:'彩虹',       artist:'周杰伦',          album:'我很忙',          trackNum:1, duration:0, coverBlob:null, demoUrl:'assets/music/track1.mp3' },
-  { id:9002, title:'我不够爱你', artist:'刘德华 & 陈慧琳', album:'Love Is Forever', trackNum:2, duration:0, coverBlob:null, demoUrl:'assets/music/track2.mp3' },
-  { id:9003, title:'朋友',       artist:'周华健',          album:'讲义气',          trackNum:3, duration:0, coverBlob:null, demoUrl:'assets/music/track3.mp3' },
   // 李宗盛精选 (Jonathan Lee compilation) — covers in assets/cover/<n>. <title>.jpg
   { id:9201, title:'山丘',           artist:'李宗盛', album:'李宗盛精选', trackNum:1,  duration:0, coverBlob:null, coverUrl:'assets/cover/1. 山丘.jpg',           demoUrl:'assets/music/1. 山丘.mp3' },
   { id:9202, title:'凡人歌',         artist:'李宗盛', album:'李宗盛精选', trackNum:2,  duration:0, coverBlob:null, coverUrl:'assets/cover/2. 凡人歌.jpg',         demoUrl:'assets/music/2. 凡人歌.mp3' },
@@ -1597,12 +1619,9 @@ const LibraryManager = (() => {
   }
 
   async function loadDemoAssets() {
-    const demos = [
-      { path:'assets/music/track1.mp3', title:'彩虹',       artist:'周杰伦',          album:'我很忙', trackNum:1 },
-      { path:'assets/music/track2.mp3', title:'我不够爱你', artist:'刘德华 & 陈慧琳', album:'',       trackNum:2 },
-      { path:'assets/music/track3.mp3', title:'朋友',       artist:'周华健',          album:'',       trackNum:3 },
-      { path:'assets/music/track4.mp3', title:'鬼迷心窍',   artist:'Beyond',          album:'',       trackNum:4 }
-    ];
+    // Legacy IDB pre-loader — no demos to seed anymore (all served from
+    // DEMO_LIBRARY via demoUrl). Kept as a no-op for API compatibility.
+    const demos = [];
     await Promise.all(demos.map(async (demo) => {
       try {
         const audioResp = await fetch(demo.path);
@@ -2730,41 +2749,132 @@ function showVolumeOverlay(vol) {
 // tracks not in this map fall back to a tasteful "no-lyrics" card
 // built from the track metadata.
 // ============================================================
+// ============================================================
+// LYRICS — keyed by track id.
+//
+// Synced format: array of { t: seconds, line: string }. The line whose t is
+// the most-recent <= currentTime is highlighted and centered in the LCD;
+// surrounding lines dim and the whole stack smoothly scrolls.
+//
+// Continuous format: array of plain strings. Falls back to the 60s loop scroll.
+//
+// NOTE: To respect copyright, the entries below contain ONLY public
+// attribution metadata for each track (song title, songwriter credit, year,
+// album, separators). No actual lyric content is included. To add real
+// lyrics you have rights to, just replace the lines in the relevant entry.
+// ============================================================
+function _attrLyrics(track, year) {
+  // Build an attribution-only timeline. Spacing tuned for ~5-min tracks.
+  return [
+    { t:   0, line: track.title },
+    { t:   8, line: '詞 · 曲 · ' + (track.artist || '') },
+    { t:  18, line: year ? String(year) : '' },
+    { t:  28, line: '· · ·' },
+    { t:  55, line: track.album || '' },
+    { t:  90, line: '· · ·' },
+    { t: 130, line: track.title },
+    { t: 160, line: '詞 · 曲 · ' + (track.artist || '') },
+    { t: 200, line: '· · ·' },
+    { t: 240, line: track.title },
+    { t: 280, line: '· · ·' }
+  ].filter(e => e.line && e.line.trim());
+}
 const LYRICS = {
-  // Example shape — uncomment and populate as you add real lyrics:
-  // 9001: [
-  //   '哪里有彩虹告诉我',
-  //   '能不能把我的愿望还给我',
-  //   '为什么天这么安静',
-  //   '所有的云都跑到我这里',
-  // ],
+  // 李宗盛精选 — attribution timelines (year of original release)
+  9201: _attrLyrics({ title:'山丘',           artist:'李宗盛', album:'李宗盛精選' }, 2013),
+  9202: _attrLyrics({ title:'凡人歌',         artist:'李宗盛', album:'李宗盛精選' }, 1991),
+  9203: _attrLyrics({ title:'鬼迷心竅',       artist:'李宗盛', album:'李宗盛精選' }, 1992),
+  9204: _attrLyrics({ title:'真心英雄',       artist:'李宗盛', album:'李宗盛精選' }, 1994),
+  9205: _attrLyrics({ title:'愛的代價',       artist:'李宗盛', album:'李宗盛精選' }, 1992),
+  9206: _attrLyrics({ title:'漂洋過海來看你', artist:'李宗盛', album:'李宗盛精選' }, 1991),
+  9207: _attrLyrics({ title:'給自己的歌',     artist:'李宗盛', album:'李宗盛精選' }, 2007),
+  9208: _attrLyrics({ title:'寂寞難耐',       artist:'李宗盛', album:'李宗盛精選' }, 1990),
+  9209: _attrLyrics({ title:'陰天',           artist:'李宗盛', album:'李宗盛精選' }, 1999),
+  9210: _attrLyrics({ title:'當愛已成往事',   artist:'李宗盛', album:'李宗盛精選' }, 1992)
 };
+
 function renderLyricsForTrack(track) {
+  const overlay = document.getElementById('np-lyrics');
   const el = document.getElementById('np-lyrics-track');
   if (!el || !track) return;
   el.innerHTML = '';
-  const lines = LYRICS[track.id];
-  const items = (lines && lines.length) ? lines : [
-    track.title  || '',
-    track.artist ? '— ' + track.artist + ' —' : '',
-    '',
-    '✦',
-    '',
-    'Instrumental',
-    '',
-    track.album || '',
-    '',
-    '✦'
-  ].filter(s => s !== null && s !== undefined);
-  items.forEach(t => {
-    const div = document.createElement('div');
-    div.textContent = t;
-    el.appendChild(div);
-  });
-  // Restart the scroll animation cleanly on each new track.
-  el.style.animation = 'none';
-  void el.offsetHeight;
-  el.style.animation = '';
+  el._lyricsData = null;
+  el._lastActiveIdx = -1;
+  el.style.transform = '';
+  const data = LYRICS[track.id];
+  const isSynced = Array.isArray(data) && data.length &&
+                   typeof data[0] === 'object' && 'line' in data[0];
+  if (isSynced) {
+    // Time-synced: each line in normal flow, container translates so the
+    // active line is centered. Continuous-scroll animation disabled.
+    overlay && overlay.classList.add('synced');
+    el.classList.add('synced');
+    data.forEach((entry, i) => {
+      const div = document.createElement('div');
+      div.className = 'lyric-line';
+      div.dataset.t = entry.t;
+      div.textContent = entry.line || ' ';
+      el.appendChild(div);
+    });
+    el._lyricsData = data;
+    el.style.animation = 'none';
+    updateSyncedLyrics();   // initial render
+  } else if (Array.isArray(data) && data.length) {
+    // Continuous lyrics (array of strings) — original 60s loop scroll
+    overlay && overlay.classList.remove('synced');
+    el.classList.remove('synced');
+    data.forEach(t => {
+      const div = document.createElement('div');
+      div.textContent = String(t);
+      el.appendChild(div);
+    });
+    el.style.animation = 'none';
+    void el.offsetHeight;
+    el.style.animation = '';
+  } else {
+    // No lyrics — placeholder card built from metadata
+    overlay && overlay.classList.remove('synced');
+    el.classList.remove('synced');
+    const items = [
+      track.title || '',
+      track.artist ? '— ' + track.artist + ' —' : '',
+      '', '✦', '',
+      'Instrumental', '',
+      track.album || '', '', '✦'
+    ].filter(s => s !== null && s !== undefined);
+    items.forEach(t => {
+      const div = document.createElement('div');
+      div.textContent = t;
+      el.appendChild(div);
+    });
+    el.style.animation = 'none';
+    void el.offsetHeight;
+    el.style.animation = '';
+  }
+}
+
+function updateSyncedLyrics() {
+  const el = document.getElementById('np-lyrics-track');
+  if (!el || !el.classList.contains('synced') || !el._lyricsData) return;
+  const t = audioEl.currentTime || 0;
+  const data = el._lyricsData;
+  // Find the active index: last entry with t <= currentTime.
+  let active = -1;
+  for (let i = 0; i < data.length; i++) {
+    if (data[i].t <= t) active = i;
+    else break;
+  }
+  if (active === el._lastActiveIdx) return;
+  el._lastActiveIdx = active;
+  const lines = el.querySelectorAll('.lyric-line');
+  lines.forEach((line, i) => line.classList.toggle('active', i === active));
+  if (active >= 0 && lines[active]) {
+    const wrap = el.parentElement; // #np-lyrics
+    const wrapH = wrap ? wrap.clientHeight : 0;
+    const line  = lines[active];
+    const ty = (wrapH / 2) - (line.offsetHeight / 2) - line.offsetTop;
+    el.style.transform = `translateY(${ty}px)`;
+  }
 }
 
 async function playTrack(track) {
@@ -3584,6 +3694,9 @@ audioEl.addEventListener('timeupdate', () => {
   const remaining = document.getElementById('np-remaining');
   if (elapsed) elapsed.textContent = formatTime(cur);
   if (remaining) remaining.textContent = '-' + formatTime(dur - cur);
+
+  // Drive the time-synced lyric scroll when Now Playing is visible.
+  if (appState.state === STATES.NOW_PLAYING) updateSyncedLyrics();
 });
 
 audioEl.addEventListener('ended', () => {
